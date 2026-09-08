@@ -101,7 +101,7 @@ export function validNotificationConditions(
     if (key === "plan") return id(expected);
     return (
       Object.prototype.hasOwnProperty.call(conditionValues, key) &&
-      conditionValues[key]!.includes(expected)
+      (conditionValues[key]?.includes(expected) ?? false)
     );
   });
 }
@@ -247,7 +247,39 @@ export function reconcileNotifications(
   );
   const quiet = (n: CohortNotification) =>
     state.readIds.includes(n.id) || state.suppressedIds.includes(n.id);
-  const active = eligible.find((n) => n.id === state.activeId && !quiet(n));
+  const active =
+    eligible.find((n) => n.id === state.activeId && !quiet(n)) ??
+    feed.notifications.find(
+      (n) =>
+        n.id === state.activeId &&
+        !quiet(n) &&
+        n.cohorts.some((cohortId) => {
+          const cohort = feed.cohorts.find((c) => c.id === cohortId);
+          if (!cohort) return false;
+          const entries = Object.entries(cohort.conditions);
+          if (
+            !entries.some(
+              ([key]) =>
+                context[key as keyof NotificationConditions] === undefined,
+            )
+          )
+            return false;
+          const known = {
+            ...cohort,
+            conditions: Object.fromEntries(
+              entries.filter(
+                ([key]) =>
+                  context[key as keyof NotificationConditions] !== undefined,
+              ),
+            ),
+          };
+          return matchNotification(
+            { ...n, cohorts: [cohortId] },
+            { ...feed, cohorts: [known] },
+            context,
+          ).matches;
+        }),
+    );
   const newcomer = eligible
     .filter((n) => !quiet(n) && !state.eligibleIds.includes(n.id))
     .sort(compareNotifications)[0];

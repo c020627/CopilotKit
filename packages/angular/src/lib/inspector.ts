@@ -1,3 +1,4 @@
+import packageInfo from "../../package.json";
 import { DOCUMENT, isPlatformBrowser } from "@angular/common";
 import {
   afterNextRender,
@@ -92,6 +93,11 @@ export class CopilotInspector {
       mod.configureWebInspectorElement(
         element,
         this.injector.get(CopilotKit).core,
+        {
+          development: this.isDevelopment,
+          framework: "angular",
+          sdkVersion: packageInfo.version,
+        },
       );
 
       if (!existing) {

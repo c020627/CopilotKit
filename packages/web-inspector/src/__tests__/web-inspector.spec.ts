@@ -1,3 +1,8 @@
+vi.mock("../lib/notification-loader.js", async () => {
+  const { fetchNotificationFixture } =
+    await import("./notification-fixture.js");
+  return { loadNotificationFeed: fetchNotificationFixture };
+});
 import {
   CpkThreadInspector,
   configureWebInspectorElement,
@@ -224,6 +229,11 @@ function createMockCore(initialAgents: Record<string, AbstractAgent> = {}) {
 /** Create inspector, attach to DOM, wire up mock core. */
 function createInspectorWithCore(core: MockCore) {
   const inspector = new WebInspectorElement();
+  inspector.notificationContext = {
+    development: true,
+    framework: "react",
+    sdkVersion: "1.70.2",
+  };
   document.body.appendChild(inspector);
   // WebInspectorElement["core"] is a CopilotKitCore instance — our MockCore
   // only implements the subset exercised by these tests.
@@ -301,6 +311,11 @@ describe("WebInspectorElement", () => {
   it("binds a host core before the real custom element connects", () => {
     const { core } = createMockCore();
     const inspector = new WebInspectorElement();
+    inspector.notificationContext = {
+      development: true,
+      framework: "react",
+      sdkVersion: "1.70.2",
+    };
 
     configureWebInspectorElement(inspector, core as unknown as CopilotKitCore);
     document.body.appendChild(inspector);
@@ -1516,7 +1531,7 @@ describe("CpkThreadInspector provider contract", () => {
 // cannot inflate itself by counting people who opened the Inspector for an
 // unrelated reason, or who arrived before the feed resolved.
 
-const ANNOUNCEMENT_URL = "https://cdn.copilotkit.ai/announcements.json";
+const ANNOUNCEMENT_URL = "https://cdn.copilotkit.ai/notifications/v1.json";
 
 type OpenTelemetryInternals = {
   isOpen: boolean;
@@ -1539,6 +1554,10 @@ async function openWhatsNew(inspector: WebInspectorElement): Promise<void> {
   await inspector.updateComplete;
   inspector.shadowRoot
     ?.querySelector<HTMLElement>('button[data-inspector-menu-key="whats-new"]')
+    ?.click();
+  await inspector.updateComplete;
+  inspector.shadowRoot
+    ?.querySelector<HTMLButtonElement>(".cpk-notification-row")
     ?.click();
   await inspector.updateComplete;
 }
@@ -1597,6 +1616,11 @@ describe("WebInspectorElement open + What's new telemetry", () => {
         CopilotKitCoreRuntimeConnectionStatus.Disconnected;
     }
     const inspector = new WebInspectorElement();
+    inspector.notificationContext = {
+      development: true,
+      framework: "react",
+      sdkVersion: "1.70.2",
+    };
     document.body.appendChild(inspector);
     inspector.core = harness.core as unknown as WebInspectorElement["core"];
     return {
@@ -1631,7 +1655,7 @@ describe("WebInspectorElement open + What's new telemetry", () => {
     const viewed = eventsNamed("oss.inspector.whats_new_signal_viewed");
     expect(viewed).toHaveLength(1);
     expect(viewed[0]!.properties).toMatchObject({
-      banner_id: timestamp,
+      banner_id: "notice-" + Date.parse(timestamp),
       surface: "launcher",
       presentation: "animated",
       package_name: "@copilotkit/web-inspector",
@@ -1729,7 +1753,7 @@ describe("WebInspectorElement open + What's new telemetry", () => {
     const viewed = eventsNamed("oss.inspector.whats_new_viewed");
     expect(viewed).toHaveLength(1);
     expect(viewed[0]!.properties).toMatchObject({
-      banner_id: timestamp,
+      banner_id: "notice-" + Date.parse(timestamp),
       surface: "whats_new",
       package_name: "@copilotkit/web-inspector",
     });
@@ -2210,6 +2234,11 @@ function setupRuntimeDiagnostics() {
 
     localStorage.removeItem("cpk:inspector:state");
     const inspector = new WebInspectorElement();
+    inspector.notificationContext = {
+      development: true,
+      framework: "react",
+      sdkVersion: "1.70.2",
+    };
     document.body.appendChild(inspector);
     inspector.core = core;
     await inspector.updateComplete;
@@ -2529,6 +2558,11 @@ describe("WebInspectorElement owned thread store headers (#5581)", () => {
     );
 
     const inspector = new WebInspectorElement();
+    inspector.notificationContext = {
+      development: true,
+      framework: "react",
+      sdkVersion: "1.70.2",
+    };
     document.body.appendChild(inspector);
     inspector.core = harness.core as unknown as WebInspectorElement["core"];
     harness.emitAgentsChanged();
@@ -2548,6 +2582,11 @@ describe("WebInspectorElement owned thread store headers (#5581)", () => {
     const harness = createHeaderMockCore({ alpha: agent }, {});
 
     const inspector = new WebInspectorElement();
+    inspector.notificationContext = {
+      development: true,
+      framework: "react",
+      sdkVersion: "1.70.2",
+    };
     document.body.appendChild(inspector);
     inspector.core = harness.core as unknown as WebInspectorElement["core"];
     harness.emitAgentsChanged();
@@ -2573,6 +2612,11 @@ describe("WebInspectorElement owned thread store headers (#5581)", () => {
     delete (harness.core as { ɵruntimeFetch?: unknown }).ɵruntimeFetch;
 
     const inspector = new WebInspectorElement();
+    inspector.notificationContext = {
+      development: true,
+      framework: "react",
+      sdkVersion: "1.70.2",
+    };
     document.body.appendChild(inspector);
     inspector.core = harness.core as unknown as WebInspectorElement["core"];
     harness.emitAgentsChanged();
@@ -2588,6 +2632,11 @@ describe("WebInspectorElement owned thread store headers (#5581)", () => {
     const harness = createHeaderMockCore({ alpha: agent }, { "X-CSRF": "1" });
 
     const inspector = new WebInspectorElement();
+    inspector.notificationContext = {
+      development: true,
+      framework: "react",
+      sdkVersion: "1.70.2",
+    };
     document.body.appendChild(inspector);
     inspector.core = harness.core as unknown as WebInspectorElement["core"];
     harness.emitAgentsChanged();
@@ -2642,6 +2691,11 @@ describe("WebInspectorElement owned thread store headers (#5581)", () => {
     );
     const harness = createHeaderMockCore({}, { "X-CSRF": "1" });
     const inspector = new WebInspectorElement();
+    inspector.notificationContext = {
+      development: true,
+      framework: "react",
+      sdkVersion: "1.70.2",
+    };
     document.body.appendChild(inspector);
     inspector.core = harness.core as unknown as WebInspectorElement["core"];
 
@@ -2692,6 +2746,11 @@ describe("WebInspectorElement owned thread store headers (#5581)", () => {
     );
 
     const inspector = new WebInspectorElement();
+    inspector.notificationContext = {
+      development: true,
+      framework: "react",
+      sdkVersion: "1.70.2",
+    };
     document.body.appendChild(inspector);
     inspector.core = harness.core as unknown as WebInspectorElement["core"];
     harness.emitAgentsChanged();
@@ -2742,6 +2801,11 @@ describe("WebInspectorElement owned thread store headers (#5581)", () => {
     );
 
     const inspector = new WebInspectorElement();
+    inspector.notificationContext = {
+      development: true,
+      framework: "react",
+      sdkVersion: "1.70.2",
+    };
     document.body.appendChild(inspector);
     inspector.core = harness.core as unknown as WebInspectorElement["core"];
     harness.emitAgentsChanged();
@@ -2799,6 +2863,11 @@ describe("WebInspectorElement owned thread store headers (#5581)", () => {
       }),
     );
     const inspector = new WebInspectorElement();
+    inspector.notificationContext = {
+      development: true,
+      framework: "react",
+      sdkVersion: "1.70.2",
+    };
     document.body.appendChild(inspector);
     inspector.core = harness.core as unknown as WebInspectorElement["core"];
     harness.emitAgentsChanged();
@@ -2839,6 +2908,11 @@ describe("WebInspectorElement owned thread store headers (#5581)", () => {
     const harness = createHeaderMockCore({ alpha: agent }, {}, {}, true);
 
     const inspector = new WebInspectorElement();
+    inspector.notificationContext = {
+      development: true,
+      framework: "react",
+      sdkVersion: "1.70.2",
+    };
     document.body.appendChild(inspector);
     inspector.core = harness.core as unknown as WebInspectorElement["core"];
     harness.emitAgentsChanged();
@@ -2910,6 +2984,11 @@ describe("WebInspectorElement owned thread store headers (#5581)", () => {
 
   it("does not render example threads once real threads are present", async () => {
     const inspector = new WebInspectorElement();
+    inspector.notificationContext = {
+      development: true,
+      framework: "react",
+      sdkVersion: "1.70.2",
+    };
     document.body.appendChild(inspector);
     inspector.core = createHeaderMockCore({}, {}, {}, true)
       .core as unknown as WebInspectorElement["core"];
@@ -2940,6 +3019,11 @@ describe("WebInspectorElement owned thread store headers (#5581)", () => {
     const harness = createHeaderMockCore({ alpha: agent }, {}, {}, true);
 
     const inspector = new WebInspectorElement();
+    inspector.notificationContext = {
+      development: true,
+      framework: "react",
+      sdkVersion: "1.70.2",
+    };
     document.body.appendChild(inspector);
     inspector.core = harness.core as unknown as WebInspectorElement["core"];
     harness.emitAgentsChanged();
@@ -3017,6 +3101,11 @@ describe("WebInspectorElement owned thread store headers (#5581)", () => {
     const harness = createHeaderMockCore({ alpha: agent }, {}, {}, false);
 
     const inspector = new WebInspectorElement();
+    inspector.notificationContext = {
+      development: true,
+      framework: "react",
+      sdkVersion: "1.70.2",
+    };
     document.body.appendChild(inspector);
     inspector.core = harness.core as unknown as WebInspectorElement["core"];
     harness.emitAgentsChanged();
@@ -3115,6 +3204,11 @@ describe("WebInspectorElement owned thread store headers (#5581)", () => {
     const harness = createHeaderMockCore({ alpha: agent }, {}, {}, false);
 
     const inspector = new WebInspectorElement();
+    inspector.notificationContext = {
+      development: true,
+      framework: "react",
+      sdkVersion: "1.70.2",
+    };
     document.body.appendChild(inspector);
     inspector.core = harness.core as unknown as WebInspectorElement["core"];
     harness.emitAgentsChanged();
@@ -4697,6 +4791,11 @@ describe("WebInspectorElement Capabilities tab", () => {
   it("shows the Capabilities tab and renders both sections", async () => {
     const { core } = createCapabilitiesCore();
     const inspector = new WebInspectorElement();
+    inspector.notificationContext = {
+      development: true,
+      framework: "react",
+      sdkVersion: "1.70.2",
+    };
     document.body.appendChild(inspector);
     inspector.core = core as unknown as WebInspectorElement["core"];
     (inspector as unknown as { isOpen: boolean }).isOpen = true;
@@ -4717,6 +4816,11 @@ describe("WebInspectorElement Capabilities tab", () => {
   it("calls setToolEnabled(false) when a tool switch is toggled off", async () => {
     const { core, setToolEnabled } = createCapabilitiesCore();
     const inspector = new WebInspectorElement();
+    inspector.notificationContext = {
+      development: true,
+      framework: "react",
+      sdkVersion: "1.70.2",
+    };
     document.body.appendChild(inspector);
     inspector.core = core as unknown as WebInspectorElement["core"];
     (inspector as unknown as { isOpen: boolean }).isOpen = true;
@@ -4744,6 +4848,11 @@ describe("WebInspectorElement Capabilities tab", () => {
   it("calls setCatalogComponentEnabled when a catalog switch is toggled", async () => {
     const { core, setCatalogComponentEnabled } = createCapabilitiesCore();
     const inspector = new WebInspectorElement();
+    inspector.notificationContext = {
+      development: true,
+      framework: "react",
+      sdkVersion: "1.70.2",
+    };
     document.body.appendChild(inspector);
     inspector.core = core as unknown as WebInspectorElement["core"];
     (inspector as unknown as { isOpen: boolean }).isOpen = true;
@@ -4767,6 +4876,11 @@ describe("WebInspectorElement Capabilities tab", () => {
     const { core } = createCapabilitiesCore();
     (core as { catalogComponents: unknown[] }).catalogComponents = [];
     const inspector = new WebInspectorElement();
+    inspector.notificationContext = {
+      development: true,
+      framework: "react",
+      sdkVersion: "1.70.2",
+    };
     document.body.appendChild(inspector);
     inspector.core = core as unknown as WebInspectorElement["core"];
     (inspector as unknown as { isOpen: boolean }).isOpen = true;

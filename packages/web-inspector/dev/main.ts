@@ -65,7 +65,7 @@ const runtimeStatus = requiredElement<HTMLElement>("#runtime-status");
 const mediaStatus = requiredElement<HTMLElement>("#media-status");
 const inspectorHost = requiredElement<HTMLElement>("#inspector-host");
 
-const ANNOUNCEMENT_URL = "https://cdn.copilotkit.ai/announcements.json";
+const ANNOUNCEMENT_URL = "https://cdn.copilotkit.ai/notifications/v1.json";
 const NOTIFICATION_SOURCE_QUERY_KEY = "notification";
 const NOTIFICATION_TEXT_QUERY_KEY = "notification-text";
 
@@ -156,9 +156,33 @@ function installCustomNotificationResponse(config: NotificationConfig): void {
     return Promise.resolve(
       new Response(
         JSON.stringify({
-          timestamp: customNotificationTimestamp(config.text),
-          previewText: config.text,
-          announcement: `## Workbench preview\n\n${escapeMarkdownText(config.text)}`,
+          schemaVersion: 1,
+          cohorts: [
+            {
+              id: "workbench",
+              name: "Workbench",
+              description: "Local stable SDK preview",
+              conditions: {},
+            },
+          ],
+          notifications: [
+            {
+              id: "workbench-update",
+              title: config.text,
+              body: `## Workbench preview\n\n${escapeMarkdownText(config.text)}`,
+              publishedAt: customNotificationTimestamp(config.text),
+              cohorts: ["workbench"],
+              priority: "High",
+            },
+            {
+              id: "workbench-second",
+              title: "Another update",
+              body: "This remains in What's New after dismissing the preview.",
+              publishedAt: "2026-09-01T12:00:00.000Z",
+              cohorts: ["workbench"],
+              priority: "Normal",
+            },
+          ],
         }),
         {
           headers: {
@@ -638,6 +662,11 @@ async function boot(): Promise<void> {
     deferInitialConnection: true,
   });
   inspector = document.createElement(WEB_INSPECTOR_TAG);
+  inspector.notificationContext = {
+    development: true,
+    framework: "react",
+    sdkVersion: "1.70.2",
+  };
   inspector.setAttribute("auto-attach-core", "false");
   inspector.core = core;
   inspectorHost.replaceChildren(inspector);

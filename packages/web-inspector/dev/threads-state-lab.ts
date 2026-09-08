@@ -1017,6 +1017,9 @@ export function clearThreadsStateLabNotificationState(
   sessionStorage: Pick<Storage, "removeItem">,
   cookieTarget: { cookie: string },
 ): void {
+  localStorage.removeItem("cpk:inspector:notifications:v1");
+  cookieTarget.cookie =
+    "cpk_inspector_notifications_v1=; Path=/; Max-Age=0; SameSite=Lax";
   const rawInspectorState = localStorage.getItem(INSPECTOR_STATE_STORAGE_KEY);
   if (rawInspectorState) {
     try {

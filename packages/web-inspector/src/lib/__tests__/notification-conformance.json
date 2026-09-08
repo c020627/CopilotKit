@@ -1,0 +1,195 @@
+{
+  "feed": {
+    "schemaVersion": 1,
+    "cohorts": [
+      {
+        "id": "react-fix",
+        "name": "React fix",
+        "description": "Fix range",
+        "conditions": {
+          "framework": "react",
+          "sdkVersion": ">=1.70.1 <1.70.3"
+        }
+      },
+      {
+        "id": "angular-fix",
+        "name": "Angular fix",
+        "description": "Independent release line",
+        "conditions": {
+          "framework": "angular",
+          "sdkVersion": "~0.5.1"
+        }
+      },
+      {
+        "id": "pro",
+        "name": "Pro",
+        "description": "Confirmed managed Pro",
+        "conditions": {
+          "intelligence": "enabled",
+          "plan": "pro",
+          "deployment": "managed"
+        }
+      },
+      {
+        "id": "disabled",
+        "name": "Disabled",
+        "description": "Confirmed SSE",
+        "conditions": {
+          "intelligence": "disabled"
+        }
+      }
+    ],
+    "notifications": [
+      {
+        "id": "fix",
+        "title": "fix",
+        "body": "Markdown **body**.",
+        "publishedAt": "2026-09-08T12:00:00.000Z",
+        "cohorts": [
+          "react-fix",
+          "angular-fix"
+        ],
+        "priority": "High"
+      },
+      {
+        "id": "pro-news",
+        "title": "pro-news",
+        "body": "Markdown **body**.",
+        "publishedAt": "2026-09-08T12:00:00.000Z",
+        "cohorts": [
+          "pro"
+        ],
+        "priority": "Normal"
+      },
+      {
+        "id": "try-intelligence",
+        "title": "try-intelligence",
+        "body": "Markdown **body**.",
+        "publishedAt": "2026-09-08T12:00:00.000Z",
+        "cohorts": [
+          "disabled"
+        ],
+        "priority": "Low"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "name": "react boundary lower",
+      "context": {
+        "development": true,
+        "framework": "react",
+        "sdkVersion": "1.70.0"
+      },
+      "matching": []
+    },
+    {
+      "name": "react included",
+      "context": {
+        "development": true,
+        "framework": "react",
+        "sdkVersion": "1.70.2"
+      },
+      "matching": [
+        "fix"
+      ]
+    },
+    {
+      "name": "react upper excluded",
+      "context": {
+        "development": true,
+        "framework": "react",
+        "sdkVersion": "1.70.3"
+      },
+      "matching": []
+    },
+    {
+      "name": "angular own line",
+      "context": {
+        "development": true,
+        "framework": "angular",
+        "sdkVersion": "0.5.2"
+      },
+      "matching": [
+        "fix"
+      ]
+    },
+    {
+      "name": "vue not react",
+      "context": {
+        "development": true,
+        "framework": "vue",
+        "sdkVersion": "1.70.2"
+      },
+      "matching": []
+    },
+    {
+      "name": "prerelease",
+      "context": {
+        "development": true,
+        "framework": "react",
+        "sdkVersion": "1.70.2-beta.1"
+      },
+      "matching": []
+    },
+    {
+      "name": "unknown intelligence",
+      "context": {
+        "development": true,
+        "framework": "react",
+        "sdkVersion": "1.70.3"
+      },
+      "matching": []
+    },
+    {
+      "name": "confirmed disabled",
+      "context": {
+        "development": true,
+        "framework": "react",
+        "sdkVersion": "1.70.2",
+        "intelligence": "disabled"
+      },
+      "matching": [
+        "fix",
+        "try-intelligence"
+      ]
+    },
+    {
+      "name": "managed pro",
+      "context": {
+        "development": true,
+        "framework": "react",
+        "sdkVersion": "1.70.2",
+        "intelligence": "enabled",
+        "plan": "pro",
+        "deployment": "managed"
+      },
+      "matching": [
+        "fix",
+        "pro-news"
+      ]
+    },
+    {
+      "name": "unknown plan",
+      "context": {
+        "development": true,
+        "framework": "react",
+        "sdkVersion": "1.70.2",
+        "intelligence": "enabled",
+        "deployment": "managed"
+      },
+      "matching": [
+        "fix"
+      ]
+    },
+    {
+      "name": "production",
+      "context": {
+        "development": false,
+        "framework": "react",
+        "sdkVersion": "1.70.2"
+      },
+      "matching": []
+    }
+  ]
+}

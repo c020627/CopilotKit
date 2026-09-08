@@ -295,3 +295,22 @@ test("reading another notice leaves the highlight and unrelated unread notices a
   expect(read.activeId).toBe("high");
   expect(read.suppressedIds).toEqual(["low"]);
 });
+
+test("preserves a stored highlight while required runtime metadata is loading, without making it eligible", () => {
+  const catalog: NotificationFeed = {
+    ...feed,
+    cohorts: [{ ...feed.cohorts[0]!, conditions: { intelligence: "enabled" } }],
+  };
+  const selected = reconcileNotifications(emptyNotificationState(), catalog, {
+    ...context,
+    intelligence: "enabled",
+  });
+  const loading = reconcileNotifications(selected, catalog, context);
+  expect(loading.activeId).toBe("upgrade");
+  expect(loading.eligibleIds).toEqual([]);
+  const resolved = reconcileNotifications(loading, catalog, {
+    ...context,
+    intelligence: "disabled",
+  });
+  expect(resolved.activeId).toBeNull();
+});

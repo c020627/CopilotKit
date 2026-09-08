@@ -1,3 +1,8 @@
+import {
+  emptyNotificationState,
+  parseNotificationState,
+} from "./notifications.js";
+import type { NotificationState } from "./notifications.js";
 import type { Anchor, DockMode, Position, Size } from "./types.js";
 
 export type PersistedContextState = {
@@ -491,4 +496,35 @@ function generateUuidV4(): string {
     const v = c === "x" ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
+}
+
+const NOTIFICATION_COOKIE = "cpk_inspector_notifications_v1";
+const NOTIFICATION_STORAGE = "cpk:inspector:notifications:v1";
+
+/** Load host-scoped delivery state, with per-origin fallback when cookies are blocked. */
+export function loadNotificationState(): NotificationState {
+  for (const raw of [
+    readCookie(NOTIFICATION_COOKIE),
+    readLocalStorageItem(NOTIFICATION_STORAGE),
+  ]) {
+    if (!raw) continue;
+    try {
+      const state = parseNotificationState(JSON.parse(raw));
+      if (state) return state;
+    } catch {
+      /* Try the mirror. */
+    }
+  }
+  return emptyNotificationState();
+}
+
+/** Save without dropping acknowledgement history or letting storage errors escape. */
+export function saveNotificationState(state: NotificationState): void {
+  const raw = JSON.stringify(state);
+  writeLocalStorageItem(NOTIFICATION_STORAGE, raw);
+  // Leave room for cookie attributes. Oversized history degrades to localStorage,
+  // rather than keeping a stale host cookie that would re-arm read notices.
+  if (encodeURIComponent(raw).length < 3500)
+    writeCookie(NOTIFICATION_COOKIE, raw, "Max-Age=31536000");
+  else writeCookie(NOTIFICATION_COOKIE, "", "Max-Age=0");
 }
