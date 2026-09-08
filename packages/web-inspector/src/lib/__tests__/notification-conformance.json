@@ -45,10 +45,7 @@
         "title": "fix",
         "body": "Markdown **body**.",
         "publishedAt": "2026-09-08T12:00:00.000Z",
-        "cohorts": [
-          "react-fix",
-          "angular-fix"
-        ],
+        "cohorts": ["react-fix", "angular-fix"],
         "priority": "High"
       },
       {
@@ -56,9 +53,7 @@
         "title": "pro-news",
         "body": "Markdown **body**.",
         "publishedAt": "2026-09-08T12:00:00.000Z",
-        "cohorts": [
-          "pro"
-        ],
+        "cohorts": ["pro"],
         "priority": "Normal"
       },
       {
@@ -66,9 +61,7 @@
         "title": "try-intelligence",
         "body": "Markdown **body**.",
         "publishedAt": "2026-09-08T12:00:00.000Z",
-        "cohorts": [
-          "disabled"
-        ],
+        "cohorts": ["disabled"],
         "priority": "Low"
       }
     ]
@@ -90,9 +83,7 @@
         "framework": "react",
         "sdkVersion": "1.70.2"
       },
-      "matching": [
-        "fix"
-      ]
+      "matching": ["fix"]
     },
     {
       "name": "react upper excluded",
@@ -110,9 +101,7 @@
         "framework": "angular",
         "sdkVersion": "0.5.2"
       },
-      "matching": [
-        "fix"
-      ]
+      "matching": ["fix"]
     },
     {
       "name": "vue not react",
@@ -149,10 +138,7 @@
         "sdkVersion": "1.70.2",
         "intelligence": "disabled"
       },
-      "matching": [
-        "fix",
-        "try-intelligence"
-      ]
+      "matching": ["fix", "try-intelligence"]
     },
     {
       "name": "managed pro",
@@ -164,10 +150,7 @@
         "plan": "pro",
         "deployment": "managed"
       },
-      "matching": [
-        "fix",
-        "pro-news"
-      ]
+      "matching": ["fix", "pro-news"]
     },
     {
       "name": "unknown plan",
@@ -178,9 +161,7 @@
         "intelligence": "enabled",
         "deployment": "managed"
       },
-      "matching": [
-        "fix"
-      ]
+      "matching": ["fix"]
     },
     {
       "name": "production",
