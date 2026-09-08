@@ -758,19 +758,15 @@ test("the beat ends and leaves the resting dot behind", async () => {
 
 // ── The removed surfaces ──────────────────────────────────────────────────
 
-test("one notification preview is anchored to the closed launcher", async () => {
+test("notifications use the existing launcher HUD without a separate preview", async () => {
   const context = await setup();
   const shadowRoot = root(context.inspector);
-
   expect(shadowRoot.querySelector(".announcement-preview")).toBeNull();
-  expect(shadowRoot.querySelectorAll(".cpk-notification-preview")).toHaveLength(
-    1,
-  );
-  expect(
-    shadowRoot.querySelector(".cpk-notification-preview")?.textContent,
-  ).toContain("Channels are here");
-  expect(stylesheetText(context.inspector)).not.toContain(
-    ".announcement-preview",
+  expect(shadowRoot.querySelector(".cpk-notification-preview")).toBeNull();
+  await openHud(context.inspector);
+  expect(shadowRoot.querySelectorAll("[data-cpk-hud-news]")).toHaveLength(1);
+  expect(hudNewsButton(context.inspector)?.textContent).toContain(
+    "Channels are here",
   );
 });
 

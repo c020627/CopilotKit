@@ -11313,12 +11313,6 @@ export class WebInspectorElement extends LitElement {
         background-color: #eee6fe !important;
         color: #5558b2 !important;
       }
-      .cpk-notification-preview { display: flex; align-items: start; gap: 8px; position: absolute; bottom: calc(100% + 12px); right: 0; width: min(300px, calc(100vw - 32px)); padding: 14px; border: 1px solid var(--inspector-border, #ddd); border-radius: 12px; background: var(--inspector-background, white); color: var(--inspector-foreground, #171717); box-shadow: 0 4px 24px #0002; }
-      .cpk-notification-preview[data-vertical="top"] { top: calc(100% + 12px); bottom: auto; }
-      .cpk-notification-preview[data-horizontal="left"] { left: 0; right: auto; }
-      .cpk-notification-preview[data-color-scheme="dark"] { background: #202024; color: #f4f4f5; border-color: #444; }
-      .cpk-notification-preview button { cursor: pointer; background: transparent; color: inherit; border: 0; text-align: left; font: inherit; }
-      .cpk-notification-preview button:first-child { flex: 1; }
       .cpk-notification-row { display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 18px 0; text-align: left; border: 0; border-bottom: 1px solid #ddd; color: inherit; background: transparent; cursor: pointer; font: inherit; }
       .cpk-notification-row span { font-size: 12px; opacity: .7; }
       span[class*="text-slate-800"],
@@ -11738,7 +11732,6 @@ export class WebInspectorElement extends LitElement {
             >${this.getGestureLabel() ?? ""}</span
           >`
         }
-        ${this.renderNotificationPreview()}
         ${this.renderLauncherHud()}
       </div>
     `;
@@ -12076,7 +12069,10 @@ export class WebInspectorElement extends LitElement {
 
   private getUnreadAnnouncementTitle(): string | null {
     if (!this.newsSignalArmed || !this.announcementLoaded) return null;
-    const title = this.announcementPreviewText?.trim() || "New in CopilotKit";
+    const title =
+      this.notificationFeed?.notifications
+        .find((notice) => notice.id === this.notificationState.activeId)
+        ?.title.trim() || "New in CopilotKit";
     const titleCharacters = Array.from(title);
     return titleCharacters.length > HUD_ANNOUNCEMENT_TITLE_LIMIT
       ? `${titleCharacters
@@ -21872,28 +21868,6 @@ export class WebInspectorElement extends LitElement {
     );
     this.refreshNotifications();
     this.handleMenuSelect(WHATS_NEW_MENU_KEY);
-  }
-
-  private renderNotificationPreview() {
-    const notice = this.notificationFeed?.notifications.find(
-      (n) =>
-        this.notificationState.eligibleIds.includes(n.id) &&
-        n.id === this.notificationState.activeId,
-    );
-    if (
-      !notice ||
-      this.isOpen ||
-      this.launcherHudOpen ||
-      !this.notificationContext.development
-    )
-      return nothing;
-    return html`<aside class="cpk-notification-preview" data-vertical=${this.contextState.button.anchor.vertical} data-horizontal=${this.contextState.button.anchor.horizontal} data-color-scheme=${this.colorScheme} aria-label="CopilotKit update">
-      <button type="button" @click=${() => {
-        this.readNotification(notice.id);
-        this.openInspector("floating_button");
-      }}>${notice.title}</button>
-      <button type="button" aria-label="Dismiss notification" @click=${() => this.clearNewsSignal()}>${this.renderIcon("X")}</button>
-    </aside>`;
   }
 
   private async convertMarkdownToHtml(

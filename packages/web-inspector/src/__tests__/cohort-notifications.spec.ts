@@ -60,6 +60,15 @@ async function mount(development = true, core: CopilotKitCore | null = null) {
   return inspector;
 }
 
+async function openHud(inspector: WebInspectorElement) {
+  inspector.shadowRoot
+    ?.querySelector(".console-button-wrapper")
+    ?.dispatchEvent(
+      new PointerEvent("pointerenter", { bubbles: true, composed: true }),
+    );
+  await inspector.updateComplete;
+}
+
 function button(
   inspector: WebInspectorElement,
   label: string,
@@ -82,29 +91,31 @@ test("production and unconfigured Inspectors never request notifications", async
   expect(loadNotificationFeed).not.toHaveBeenCalled();
 });
 
-test("shows one badge-free preview and X suppresses backlog across remounts", async () => {
+test("uses the existing New bubble without a second preview and X suppresses backlog across remounts", async () => {
   const inspector = await mount();
   expect(
-    inspector.shadowRoot?.querySelector(".cpk-notification-preview")
-      ?.textContent,
+    inspector.shadowRoot?.querySelector(".cpk-notification-preview"),
+  ).toBeNull();
+  await openHud(inspector);
+  expect(
+    inspector.shadowRoot?.querySelector("[data-cpk-hud-news]")?.textContent,
   ).toContain("Update CopilotKit");
   expect(
-    inspector.shadowRoot?.querySelector(".cpk-notification-preview")
-      ?.textContent,
+    inspector.shadowRoot?.querySelector("[data-cpk-hud-news]")?.textContent,
   ).not.toMatch(/High|Urgent|Normal|Low/);
   button(inspector, "Dismiss notification").click();
   await inspector.updateComplete;
   expect(loadNotificationState().suppressedIds).toEqual(["high", "low"]);
   inspector.remove();
   const next = await mount();
-  expect(
-    next.shadowRoot?.querySelector(".cpk-notification-preview"),
-  ).toBeNull();
+  await openHud(next);
+  expect(next.shadowRoot?.querySelector("[data-cpk-hud-news]")).toBeNull();
 });
 
 test("reading the preview opens its Markdown and leaves both notices browseable", async () => {
   const inspector = await mount();
-  button(inspector, "Update CopilotKit").click();
+  await openHud(inspector);
+  button(inspector, "Open new notification: Update CopilotKit").click();
   await inspector.updateComplete;
   expect(
     inspector.shadowRoot?.querySelector(".announcement-content strong")
@@ -136,6 +147,12 @@ test("reading another notice does not dismiss the highlighted notice", async () 
   await inspector.updateComplete;
   expect(loadNotificationState().activeId).toBe("high");
   expect(loadNotificationState().readIds).toEqual(["low"]);
+  button(inspector, "Close Web Inspector").click();
+  await inspector.updateComplete;
+  await openHud(inspector);
+  expect(
+    inspector.shadowRoot?.querySelector("[data-cpk-hud-news]")?.textContent,
+  ).toContain("Update CopilotKit");
 });
 
 class NotificationCore extends CopilotKitCore {
@@ -164,18 +181,15 @@ test("runtime targeting remains quiet until confirmed metadata arrives", async (
   vi.mocked(loadNotificationFeed).mockResolvedValueOnce(targeted);
   const core = new NotificationCore({ deferInitialConnection: true });
   const inspector = await mount(true, core);
-  expect(
-    inspector.shadowRoot?.querySelector(".cpk-notification-preview"),
-  ).toBeNull();
+  await openHud(inspector);
+  expect(inspector.shadowRoot?.querySelector("[data-cpk-hud-news]")).toBeNull();
   await core.confirm("sse");
   await inspector.updateComplete;
-  expect(
-    inspector.shadowRoot?.querySelector(".cpk-notification-preview"),
-  ).toBeNull();
+  expect(inspector.shadowRoot?.querySelector("[data-cpk-hud-news]")).toBeNull();
   await core.confirm("intelligence");
   await inspector.updateComplete;
   expect(
-    inspector.shadowRoot?.querySelector(".cpk-notification-preview"),
+    inspector.shadowRoot?.querySelector("[data-cpk-hud-news]"),
   ).not.toBeNull();
   expect(loadNotificationFeed).toHaveBeenCalledTimes(1);
 });
