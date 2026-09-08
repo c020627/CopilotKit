@@ -151,6 +151,7 @@ export class AgentRegistry {
   private _requestedTransport: CopilotRuntimeTransport = "auto";
   private _audioFileTranscriptionEnabled: boolean = false;
   private _runtimeMode: RuntimeMode = RUNTIME_MODE_SSE;
+  private _reportedRuntimeMode?: RuntimeMode;
   private _intelligence?: IntelligenceRuntimeInfo;
   private _threadEndpoints?: ThreadEndpointRuntimeInfo;
   private _singleRouteResourceOperations = false;
@@ -223,6 +224,11 @@ export class AgentRegistry {
 
   get audioFileTranscriptionEnabled(): boolean {
     return this._audioFileTranscriptionEnabled;
+  }
+
+  /** Runtime mode explicitly reported by the handshake, before fallback defaults. */
+  get reportedRuntimeMode(): RuntimeMode | undefined {
+    return this._reportedRuntimeMode;
   }
 
   get runtimeMode(): RuntimeMode {
@@ -1231,6 +1237,7 @@ export class AgentRegistry {
       this._runtimeVersion = undefined;
       this._audioFileTranscriptionEnabled = false;
       this._runtimeMode = RUNTIME_MODE_SSE;
+      this._reportedRuntimeMode = undefined;
       this._intelligence = undefined;
       this._threadEndpoints = undefined;
       this._singleRouteResourceOperations = false;
@@ -1362,6 +1369,11 @@ export class AgentRegistry {
       this._runtimeVersion = version;
       this._audioFileTranscriptionEnabled =
         runtimeInfoResponse.audioFileTranscriptionEnabled ?? false;
+      this._reportedRuntimeMode =
+        runtimeInfoResponse.mode === "sse" ||
+        runtimeInfoResponse.mode === "intelligence"
+          ? runtimeInfoResponse.mode
+          : undefined;
       this._runtimeMode = runtimeInfoResponse.mode ?? RUNTIME_MODE_SSE;
       this._intelligence = runtimeInfoResponse.intelligence;
       this._singleRouteResourceOperations =
@@ -1447,6 +1459,7 @@ export class AgentRegistry {
         this._runtimeVersion = undefined;
         this._audioFileTranscriptionEnabled = false;
         this._runtimeMode = RUNTIME_MODE_SSE;
+        this._reportedRuntimeMode = undefined;
         this._intelligence = undefined;
         this._threadEndpoints = undefined;
         this._singleRouteResourceOperations = false;

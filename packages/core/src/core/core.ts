@@ -725,6 +725,11 @@ export class CopilotKitCore {
     return this.agentRegistry.audioFileTranscriptionEnabled;
   }
 
+  /** @internal Confirmed mode for Inspector targeting; absent on older handshakes. */
+  get ɵreportedRuntimeMode(): RuntimeMode | undefined {
+    return this.agentRegistry.reportedRuntimeMode;
+  }
+
   get runtimeMode(): RuntimeMode {
     return this.agentRegistry.runtimeMode;
   }
