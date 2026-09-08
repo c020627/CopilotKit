@@ -1,4 +1,4 @@
-import packageInfo from "../../package.json";
+import { ANGULAR_SDK_VERSION } from "./package-version";
 import { DOCUMENT, isPlatformBrowser } from "@angular/common";
 import {
   afterNextRender,
@@ -96,7 +96,7 @@ export class CopilotInspector {
         {
           development: this.isDevelopment,
           framework: "angular",
-          sdkVersion: packageInfo.version,
+          sdkVersion: ANGULAR_SDK_VERSION,
         },
       );
 
