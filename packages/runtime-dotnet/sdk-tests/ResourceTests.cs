@@ -16,14 +16,14 @@ internal static class ResourceTests
                 "{\"threads\":[],\"joinCode\":\"join\",\"nextCursor\":\"next\"}", async client =>
                 {
                     var result = await client.ListThreadsAsync("user", "agent", true, 2, "next/page");
-                    Check(result["joinCode"]!.GetValue<string>() == "join" && result["nextCursor"]!.GetValue<string>() == "next", "list retains metadata and pagination");
+                    Check(result.JoinCode == "join" && result.NextCursor == "next", "list retains metadata and pagination");
                 }),
             new("create thread with Learning assignment", "POST", "/api/threads",
                 "{\"threadId\":\"thread\",\"userId\":\"user\",\"agentId\":\"agent\",\"name\":\"Title\",\"learningContainerId\":\"existing-container\"}",
                 "{\"thread\":{\"id\":\"canonical\"}}", async client =>
                 {
                     var thread = await client.CreateThreadAsync("thread", "user", "agent", "Title", "existing-container");
-                    Check(thread["id"]!.GetValue<string>() == "canonical", "create unwraps canonical thread");
+                    Check(thread.Id == "canonical", "create unwraps canonical thread");
                 }),
             new("update identity", "PATCH", "/api/threads/thread%2Fid", "{\"name\":\"New\",\"userId\":\"user\",\"agentId\":\"agent\"}",
                 "{\"thread\":{\"id\":\"canonical\"}}", async client =>
@@ -104,7 +104,7 @@ internal static class ResourceTests
 
         var result = await client.GetOrCreateThreadAsync("thread", "user", "agent", learningContainerId: "existing-container");
 
-        Check(!result.Created && result.Thread["id"]!.GetValue<string>() == "canonical", "concurrent creation returns the scoped existing thread");
+        Check(!result.Created && result.Thread.Id == "canonical", "concurrent creation returns the scoped existing thread");
         Check(handler.Requests.Select(request => request.Method).SequenceEqual(new[] { "GET", "POST", "GET" }), "creation conflict uses one scoped reread");
         Check(handler.Requests[0].Url == handler.Requests[2].Url && handler.Requests[2].Url.EndsWith("?userId=user"), "conflict reread preserves user scope");
         Check(JsonNode.Parse(handler.Requests[1].Body!)!["learningContainerId"]!.GetValue<string>() == "existing-container", "concurrent creation retains Learning assignment");

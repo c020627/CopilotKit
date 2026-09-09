@@ -66,12 +66,24 @@ public sealed partial class IntelligenceClient : IDisposable
     }
 
     /// <summary>Reads a thread with an explicit application-user scope.</summary>
-    public async Task<JsonObject> GetThreadAsync(string threadId, string userId, CancellationToken cancellationToken = default)
+    public async Task<ThreadSummary> GetThreadAsync(string threadId, string userId, CancellationToken cancellationToken = default)
     {
-        return Thread(await RequestAsync(HttpMethod.Get, "/api/threads/" + Segment(threadId) + "?userId=" + Segment(userId), cancellationToken: cancellationToken));
+        return await RequestThreadAsync(HttpMethod.Get, "/api/threads/" + Segment(threadId) + "?userId=" + Segment(userId), cancellationToken: cancellationToken);
     }
 
     internal async Task<JsonNode?> RequestAsync(HttpMethod method, string path, JsonNode? body = null,
+        CancellationToken cancellationToken = default, Dictionary<string, string>? headers = null,
+        bool inspectorMetadata = false)
+        => (await RequestResultAsync(method, path, body, cancellationToken, headers, inspectorMetadata)).Body;
+
+    private async Task<ThreadSummary> RequestThreadAsync(HttpMethod method, string path, JsonNode? body = null,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await RequestResultAsync(method, path, body, cancellationToken);
+        return result.Thread ?? Thread(result.Body);
+    }
+
+    private async Task<(JsonNode? Body, ThreadSummary? Thread)> RequestResultAsync(HttpMethod method, string path, JsonNode? body = null,
         CancellationToken cancellationToken = default, Dictionary<string, string>? headers = null,
         bool inspectorMetadata = false)
     {
@@ -88,7 +100,7 @@ public sealed partial class IntelligenceClient : IDisposable
         {
             using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
             if (inspectorMetadata && response.StatusCode is System.Net.HttpStatusCode.NoContent or System.Net.HttpStatusCode.NotFound)
-                return null;
+                return (null, null);
             if (!response.IsSuccessStatusCode) throw new IntelligenceException((int)response.StatusCode, "Intelligence request rejected");
             const int maxResponseBytes = 16 * 1024 * 1024;
             if (response.Content.Headers.ContentLength > maxResponseBytes)
@@ -105,8 +117,7 @@ public sealed partial class IntelligenceClient : IDisposable
             }
             if (inspectorMetadata && bytes.Length == 0) throw new IntelligenceException(502, "Invalid Intelligence response");
             var result = bytes.Length == 0 ? null : JsonNode.Parse(bytes.GetBuffer().AsSpan(0, (int)bytes.Length));
-            NotifyThreadMutation(method, path, body, result);
-            return result;
+            return (result, NotifyThreadMutation(method, path, body, result));
         }
         catch (JsonException) { throw new IntelligenceException(502, "Invalid Intelligence response"); }
         catch (HttpRequestException) { throw new IntelligenceException(502, "Intelligence connection failed"); }
@@ -122,12 +133,12 @@ public sealed partial class IntelligenceClient : IDisposable
 
     private static JsonObject Object(JsonNode? node) => node as JsonObject ?? throw new IntelligenceException(502, "Invalid Intelligence response");
 
-    private static JsonObject Thread(JsonNode? node)
+    private static ThreadSummary Thread(JsonNode? node)
     {
         if (node is not JsonObject envelope || envelope["thread"] is not JsonObject thread
             || thread["id"] is not JsonValue id || !id.TryGetValue<string>(out var value) || string.IsNullOrWhiteSpace(value))
             throw new IntelligenceException(502, "Invalid Intelligence thread response");
-        return thread;
+        return Resource<ThreadSummary>(thread);
     }
 
     /// <summary>Cancels entitlement lookups, clears their cache, and releases SDK-owned connections.</summary>

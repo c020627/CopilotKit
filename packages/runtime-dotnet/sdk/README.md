@@ -39,7 +39,7 @@ using var intelligence = new IntelligenceClient(new IntelligenceOptions
 
 var thread = await intelligence.GetThreadAsync(
     "e8b69588-7872-4c98-b1d8-80583a4f285c", "customer-123");
-Console.WriteLine(thread["name"]);
+Console.WriteLine(thread.Name);
 ```
 
 Use your thread ID and the application-user ID that owns it.
@@ -66,9 +66,9 @@ Subscribe to events on the SDK instance that makes your requests:
 
 ```csharp
 EventHandler<ThreadEventArgs> onCreated = (_, args) =>
-    Console.WriteLine(args.Thread["id"]);
+    Console.WriteLine(args.Thread.Id);
 intelligence.ThreadCreated += onCreated;
-intelligence.ThreadUpdated += (_, args) => Console.WriteLine(args.Thread["name"]);
+intelligence.ThreadUpdated += (_, args) => Console.WriteLine(args.Thread.Name);
 intelligence.ThreadDeleted += (_, args) => Console.WriteLine(args.ThreadId);
 
 // Remove a subscription when its owner stops.
@@ -142,10 +142,13 @@ A shorter configured deadline or caller cancellation also applies.
 | Memory   | `ListMemoriesAsync`, `CreateMemoryAsync`, `UpdateMemoryAsync`, `RemoveMemoryAsync`, `RecallMemoriesAsync`                                           |
 | Feedback | `AnnotateAsync`                                                                                                                                     |
 
-Thread metadata methods return `JsonObject` values and preserve platform fields.
+Thread metadata methods return `ThreadSummary` records with native properties such as `Id`, `Name`, and `AgentId`.
 Thread reads and mutations return the thread without its response envelope.
-Lists retain their envelopes, including pagination and subscription credentials.
+`ListThreadsResponse` retains the `Threads` list, pagination cursor, and subscription credentials.
 Archive and removal methods return `Task` without a result.
+
+Lifecycle events contain the same `ThreadSummary` record that the mutation returns.
+Unnamed threads have a null `Name`. Additional platform fields remain in `ExtensionData` as JSON values.
 
 History and annotation methods return native records.
 `ThreadMessagesResponse.Messages` includes structured `Content`, tool calls, and activity types.

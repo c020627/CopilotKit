@@ -19,6 +19,8 @@ public sealed partial class IntelligenceClient
                 ?? throw new IntelligenceException(502, "Invalid Intelligence resource response");
             var invalid = result switch
             {
+                ListThreadsResponse listed => listed.Threads.Any(thread => thread is null || string.IsNullOrWhiteSpace(thread.Id)),
+                ThreadSummary thread => string.IsNullOrWhiteSpace(thread.Id),
                 ListMemoriesResponse listed => listed.Memories.Any(InvalidMemory),
                 RecallMemoriesResponse recalled => recalled.Memories.Any(InvalidMemory),
                 MemorySummary memory => InvalidMemory(memory),

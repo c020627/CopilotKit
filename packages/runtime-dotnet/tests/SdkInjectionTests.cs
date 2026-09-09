@@ -53,7 +53,7 @@ internal static class SdkInjectionTests
         await runtime.DisposeAsync();
         var thread = await sdk.GetThreadAsync("thread", "trusted");
 
-        Check(thread["id"]!.GetValue<string>() == "thread" && !handler.Disposed, "Runtime shutdown leaves the borrowed SDK usable");
+        Check(thread.Id == "thread" && !handler.Disposed, "Runtime shutdown leaves the borrowed SDK usable");
         await RejectsConflictingConfiguration(sdk, http);
         await DisposesOnlyOwnedSdk();
         await RejectsDisposedSdk();

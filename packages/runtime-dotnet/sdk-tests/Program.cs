@@ -5,7 +5,7 @@ using CopilotKit.Intelligence;
 
 var tests = new Func<Task>[] { ReadsScopedThread, RejectsInvalidConfiguration, RejectsInvalidIdentifiers,
     RejectsMalformedResponses, RedactsPlatformErrors, RedactsTransportErrors, PreservesCancellation,
-    BoundsRequestTime, BoundsResponseSize, PreservesBorrowedClient, RejectsCallsAfterDisposal, BlocksRedirects, ResourceTests.RunAsync, LifecycleTests.RunAsync, InspectorTests.RunAsync, EntitlementTests.RunAsync, MemoryResultTests.RunAsync, HistoryResultTests.RunAsync };
+    BoundsRequestTime, BoundsResponseSize, PreservesBorrowedClient, RejectsCallsAfterDisposal, BlocksRedirects, ResourceTests.RunAsync, LifecycleTests.RunAsync, InspectorTests.RunAsync, EntitlementTests.RunAsync, MemoryResultTests.RunAsync, HistoryResultTests.RunAsync, ThreadResultTests.RunAsync };
 var failures = 0;
 foreach (var test in tests)
 {
@@ -196,8 +196,8 @@ static async Task ReadsScopedThread()
 
     var thread = await client.GetThreadAsync("thread/id", "customer?one");
 
-    Check(thread["id"]!.GetValue<string>() == "canonical", "SDK unwraps the thread envelope");
-    Check(thread["extension"]!["preserved"]!.GetValue<bool>(), "SDK retains platform fields");
+    Check(thread.Id == "canonical", "SDK unwraps the thread envelope");
+    Check(thread.ExtensionData["extension"].GetProperty("preserved").GetBoolean(), "SDK retains platform fields");
     Check(handler.Url == "https://platform.test/prefix/api/threads/thread%2Fid?userId=customer%3Fone", "SDK encodes scoped thread identifiers");
     Check(handler.Authorization == "Bearer test-key", "SDK authenticates platform calls");
     Check(handler.Body is null, "SDK GET has no body");

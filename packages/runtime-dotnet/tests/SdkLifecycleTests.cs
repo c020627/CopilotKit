@@ -57,8 +57,8 @@ internal static class SdkLifecycleTests
                 if (method == HttpMethod.Delete)
                     Check(received is ThreadDeletedEventArgs { ThreadId: "thread", UserId: "trusted", AgentId: "default" }, "Runtime deletion event uses trusted identity");
                 else
-                    Check(received is ThreadEventArgs changed && changed.Thread["id"]!.GetValue<string>() == "canonical"
-                        && changed.Thread["userId"]!.GetValue<string>() == "trusted", "Runtime update event uses canonical platform data and trusted identity");
+                    Check(received is ThreadEventArgs changed && changed.Thread.Id == "canonical"
+                        && changed.Thread.ExtensionData["userId"].GetString() == "trusted", "Runtime update event uses canonical platform data and trusted identity");
             }
 
             using var denied = await browser.PatchAsJsonAsync("/copilotkit/threads/denied", new { agentId = "default", userId = "forged" });
@@ -72,8 +72,8 @@ internal static class SdkLifecycleTests
             });
             Check(run.StatusCode == HttpStatusCode.Conflict, "run reports a later lock conflict");
             Check(events.Reader.TryRead(out var created) && created is ThreadEventArgs creation
-                && creation.Thread["learningContainerId"]!.GetValue<string>() == "existing-container"
-                && creation.Thread["userId"]!.GetValue<string>() == "trusted", "persisted Runtime creation emits its existing Learning Container before a later lock failure");
+                && creation.Thread.ExtensionData["learningContainerId"].GetString() == "existing-container"
+                && creation.Thread.ExtensionData["userId"].GetString() == "trusted", "persisted Runtime creation emits its existing Learning Container before a later lock failure");
             Check(!events.Reader.TryRead(out _), "nested lock operation emits no lifecycle event");
         }
         finally { await app.StopAsync(); }

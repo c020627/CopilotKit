@@ -35,8 +35,8 @@ internal static class LifecycleTests
         await sdk.CreateThreadAsync("second", "user", "agent");
 
         Check(created.Count == 1 && ReferenceEquals(sender, sdk), "creation notifies once with the SDK as sender and supports removal");
-        Check(ReferenceEquals(created[0].Thread, thread) && thread["id"]!.GetValue<string>() == "canonical", "creation returns the canonical event thread");
-        Check(updated.Count == 2 && updated.All(args => args.Thread["extension"]!["preserved"]!.GetValue<bool>()), "update and archive emit canonical platform fields");
+        Check(ReferenceEquals(created[0].Thread, thread) && thread.Id == "canonical", "creation returns the canonical event thread");
+        Check(updated.Count == 2 && updated.All(args => args.Thread.ExtensionData["extension"].GetProperty("preserved").GetBoolean()), "update and archive emit canonical platform fields");
         Check(deleted.Count == 1 && deleted[0].ThreadId == "thread/slash" && deleted[0].UserId == "user" && deleted[0].AgentId == "agent", "deletion emits decoded thread ID and caller scope");
         Check(JsonNode.Parse(handler.Requests[0].Body!)!["learningContainerId"]!.GetValue<string>() == "existing-container", "creation assigns an existing Learning Container");
         Check(JsonNode.Parse(handler.Requests[1].Body!)!["userId"]!.GetValue<string>() == "user", "updates retain explicit user identity");
@@ -116,6 +116,7 @@ internal static class LifecycleTests
             catch (IntelligenceException error) when (error.StatusCode == 502) { }
         }
         await sdk.GetThreadAsync("thread", "user");
+        handler.Responses.Enqueue((HttpStatusCode.OK, "{\"threads\":[],\"joinCode\":\"join\"}"));
         await sdk.ListThreadsAsync("user", "agent");
         const string memory = "{\"id\":\"memory\",\"kind\":\"fact\",\"scope\":\"user\",\"content\":\"content\",\"sourceThreadIds\":[],\"invalidatedAt\":null}";
         handler.Responses.Enqueue((HttpStatusCode.OK, memory));

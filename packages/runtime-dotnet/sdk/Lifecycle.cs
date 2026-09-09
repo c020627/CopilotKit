@@ -3,10 +3,10 @@ using System.Text.Json.Nodes;
 namespace CopilotKit.Intelligence;
 
 /// <summary>The canonical thread returned after a successful mutation.</summary>
-public sealed class ThreadEventArgs(JsonObject thread) : EventArgs
+public sealed class ThreadEventArgs(ThreadSummary thread) : EventArgs
 {
     /// <summary>The thread, including platform extension fields.</summary>
-    public JsonObject Thread { get; } = thread;
+    public ThreadSummary Thread { get; } = thread;
 }
 
 /// <summary>The thread identifier and caller scope of a successful deletion.</summary>
@@ -29,7 +29,7 @@ public sealed partial class IntelligenceClient
     /// <summary>Occurs after this client deletes a thread.</summary>
     public event EventHandler<ThreadDeletedEventArgs>? ThreadDeleted;
 
-    private void NotifyThreadMutation(HttpMethod method, string path, JsonNode? body, JsonNode? result)
+    private ThreadSummary? NotifyThreadMutation(HttpMethod method, string path, JsonNode? body, JsonNode? result)
     {
         var resource = path.Split('?', 2)[0];
         const string prefix = "/api/threads/";
@@ -37,11 +37,12 @@ public sealed partial class IntelligenceClient
         var isThread = threadId.Length > 0 && !threadId.Contains('/');
         if (method == HttpMethod.Post && resource == "/api/threads" || method == HttpMethod.Patch && isThread)
         {
-            JsonObject thread;
+            ThreadSummary thread;
             try { thread = Thread(result); }
-            catch (IntelligenceException) { return; }
+            catch (IntelligenceException) { return null; }
             if (method == HttpMethod.Post) Notify(ThreadCreated, new ThreadEventArgs(thread), nameof(ThreadCreated));
             else Notify(ThreadUpdated, new ThreadEventArgs(thread), nameof(ThreadUpdated));
+            return thread;
         }
         else if (method == HttpMethod.Delete && isThread && body is JsonObject request
             && request["userId"] is JsonValue user && user.TryGetValue<string>(out var userId)
@@ -49,6 +50,7 @@ public sealed partial class IntelligenceClient
         {
             Notify(ThreadDeleted, new ThreadDeletedEventArgs(Uri.UnescapeDataString(threadId), userId, agentId), nameof(ThreadDeleted));
         }
+        return null;
     }
 
     private void Notify<T>(EventHandler<T>? handlers, T args, string operation) where T : EventArgs

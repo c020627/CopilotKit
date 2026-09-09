@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 
 namespace CopilotKit.Intelligence;
 
@@ -17,30 +18,32 @@ public enum MemoryAccess
 public sealed record MemoryGrant(MemoryAccess User, MemoryAccess Project);
 
 /// <summary>The result of a thread lookup with concurrent creation support.</summary>
-public sealed record ThreadResolution(JsonObject Thread, bool Created);
+public sealed record ThreadResolution(
+    [property: JsonPropertyName("thread")] ThreadSummary Thread,
+    [property: JsonPropertyName("created")] bool Created);
 
 public sealed partial class IntelligenceClient
 {
     /// <summary>Lists one user's threads for one agent, retaining subscription credentials and pagination.</summary>
-    public async Task<JsonObject> ListThreadsAsync(string userId, string agentId, bool includeArchived = false,
+    public async Task<ListThreadsResponse> ListThreadsAsync(string userId, string agentId, bool includeArchived = false,
         int? limit = null, string? cursor = null, CancellationToken cancellationToken = default)
     {
         var path = "/api/threads?userId=" + Segment(userId) + "&agentId=" + Segment(agentId);
         if (includeArchived) path += "&includeArchived=true";
         if (limit is not null) path += "&limit=" + limit.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
         if (cursor is not null) path += "&cursor=" + Uri.EscapeDataString(cursor);
-        return Object(await RequestAsync(HttpMethod.Get, path, cancellationToken: cancellationToken));
+        return Resource<ListThreadsResponse>(await RequestAsync(HttpMethod.Get, path, cancellationToken: cancellationToken));
     }
 
     /// <summary>Creates a thread with an optional existing Learning Container ID.</summary>
-    public async Task<JsonObject> CreateThreadAsync(string threadId, string userId, string agentId,
+    public async Task<ThreadSummary> CreateThreadAsync(string threadId, string userId, string agentId,
         string? name = null, string? learningContainerId = null, CancellationToken cancellationToken = default)
     {
         Segment(threadId); Segment(userId); Segment(agentId);
         var body = new JsonObject { ["threadId"] = threadId, ["userId"] = userId, ["agentId"] = agentId };
         if (name is not null) body["name"] = name;
         if (learningContainerId is not null) body["learningContainerId"] = learningContainerId;
-        return Thread(await RequestAsync(HttpMethod.Post, "/api/threads", body, cancellationToken));
+        return await RequestThreadAsync(HttpMethod.Post, "/api/threads", body, cancellationToken);
     }
 
     /// <summary>Reads or creates a thread and resolves concurrent creation with a scoped read.</summary>
@@ -57,14 +60,14 @@ public sealed partial class IntelligenceClient
     }
 
     /// <summary>Updates thread metadata without letting updates replace caller identity.</summary>
-    public async Task<JsonObject> UpdateThreadAsync(string threadId, string userId, string agentId,
+    public async Task<ThreadSummary> UpdateThreadAsync(string threadId, string userId, string agentId,
         JsonObject updates, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(updates);
         Segment(userId); Segment(agentId);
         var body = (JsonObject)updates.DeepClone();
         body["userId"] = userId; body["agentId"] = agentId;
-        return Thread(await RequestAsync(HttpMethod.Patch, "/api/threads/" + Segment(threadId), body, cancellationToken));
+        return await RequestThreadAsync(HttpMethod.Patch, "/api/threads/" + Segment(threadId), body, cancellationToken);
     }
 
     /// <summary>Archives a thread and retains its history.</summary>
