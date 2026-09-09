@@ -90,6 +90,13 @@ compatible absence and return `204` to the client.
 
 To get started with CopilotKit, please check out the [documentation](https://docs.copilotkit.ai).
 
+## Frontend tool arguments
+
+`BuiltInAgent` validates frontend tool arguments against their JSON Schema.
+Nullable fields accept `null` and reject values of the wrong type.
+Required fields must be present. Open object fields remain intact, including A2UI component data.
+The model receives the original schema without a Zod conversion.
+
 ## Runtime entitlement deadlines
 
 Runtime entitlement requests have a 1.5-second deadline, including the response body.

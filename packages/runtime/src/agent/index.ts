@@ -19,6 +19,7 @@ import type {
   ResumeEntry,
 } from "@ag-ui/client";
 import { AbstractAgent, EventType } from "@ag-ui/client";
+import { Validator } from "@cfworker/json-schema";
 import type { AgentCapabilities } from "@ag-ui/core";
 import type {
   LanguageModel,
@@ -715,11 +716,22 @@ export function convertToolsToVercelAITools(
     if (!isJsonSchema(tool.parameters)) {
       throw new Error(`Invalid JSON schema for tool ${tool.name}`);
     }
+    const validator = new Validator(tool.parameters, "7");
     result[tool.name] = createVercelAISDKTool({
       description: tool.description,
       // AG-UI already supplies JSON Schema. A Zod round trip loses open object
       // fields (including A2UI components), references, and other constraints.
-      inputSchema: aiJsonSchema(tool.parameters),
+      inputSchema: aiJsonSchema(tool.parameters, {
+        validate: (value) => {
+          const result = validator.validate(value);
+          return result.valid
+            ? { success: true, value }
+            : {
+                success: false,
+                error: new Error(`Invalid arguments for tool ${tool.name}`),
+              };
+        },
+      }),
       // These schemas need not satisfy OpenAI's stricter closed-object subset.
       // Without an explicit false, Responses can normalize open objects shut.
       strict: false,
