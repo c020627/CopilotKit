@@ -213,6 +213,28 @@ export const entitlementCases = [
       );
     },
   },
+  {
+    id: "entitlements.body-deadline",
+    async run({ request, platform }) {
+      platform.faults.http.set(`GET ${path}`, {
+        status: 200,
+        body: ready,
+        bodyDelayMs: 4000,
+      });
+      const started = performance.now();
+      matches(await request("GET", "/info"), failure(true), "unknown");
+      assert.ok(
+        performance.now() - started < 3000,
+        "the entitlement deadline must include the response body",
+      );
+      matches(await request("GET", "/info"), failure(true), "unknown");
+      assert.equal(
+        calls(platform).length,
+        1,
+        "body timeouts share the safe failure cache",
+      );
+    },
+  },
   ...[
     "managedOrgSubscription",
     "selfHostedDeploymentLicense",

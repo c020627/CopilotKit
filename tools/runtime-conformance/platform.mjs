@@ -24,6 +24,23 @@ function json(response, status, body) {
   response.end(body === undefined ? undefined : JSON.stringify(body));
 }
 
+/** Flush response headers, then delay the body until completion or client disconnect. */
+async function delayedJson(response, status, body, delayMs) {
+  const cancellation = new AbortController();
+  const closed = () => cancellation.abort();
+  response.once("close", closed);
+  response.writeHead(status, { "Content-Type": "application/json" });
+  response.flushHeaders();
+  try {
+    await delay(delayMs, undefined, { signal: cancellation.signal });
+    response.end(body === undefined ? undefined : JSON.stringify(body));
+  } catch (error) {
+    if (!cancellation.signal.aborted) throw error;
+  } finally {
+    response.removeListener("close", closed);
+  }
+}
+
 /**
  * Start a stateful platform double. It enforces identity, locking, and durable
  * ACK rules instead of accepting arbitrary runtime requests. No live key is used.
@@ -238,6 +255,15 @@ export async function startPlatform() {
     if (fault) {
       if (fault.once) faults.http.delete(`${request.method} ${url.pathname}`);
       if (fault.delayMs) await delay(fault.delayMs);
+      if (fault.bodyDelayMs) {
+        await delayedJson(
+          response,
+          fault.status,
+          fault.body,
+          fault.bodyDelayMs,
+        );
+        return;
+      }
       json(response, fault.status, fault.body);
       return;
     }

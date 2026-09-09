@@ -90,6 +90,12 @@ compatible absence and return `204` to the client.
 
 To get started with CopilotKit, please check out the [documentation](https://docs.copilotkit.ai).
 
+## Runtime entitlement deadlines
+
+Runtime entitlement requests have a 1.5-second deadline, including the response body.
+A timeout produces a retryable 504 in the SDK and an `unavailable` entitlement result in `/info`.
+Malformed JSON remains a nonretryable response error.
+
 ## Intelligence identity and Memory
 
 An Intelligence Runtime supports web only, Channels only, or both. Web routes

@@ -1017,7 +1017,10 @@ export class CopilotKitIntelligence {
       let payload: unknown;
       try {
         payload = await response.json();
-      } catch {
+      } catch (error) {
+        if (controller.signal.aborted) {
+          throw error;
+        }
         throw new PlatformRequestError(
           "Runtime entitlement response was malformed",
           502,
