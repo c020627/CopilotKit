@@ -6,6 +6,7 @@ require 'securerandom'
 require 'thread'
 require 'timeout'
 require_relative 'inspector_metadata'
+require_relative 'runtime_entitlements'
 
 module CopilotKit
   # Safe platform error. Response bodies and credentials are not included.
@@ -14,6 +15,15 @@ module CopilotKit
     def initialize(status, message)
       @status = status
       super(message)
+    end
+  end
+
+  # Safe entitlement failure with platform status and retry guidance.
+  class RuntimeEntitlementError < Error
+    attr_reader :retryable
+    def initialize(status, message, retryable)
+      @retryable = retryable
+      super(status, message)
     end
   end
 
@@ -49,11 +59,15 @@ module CopilotKit
       response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https', open_timeout: 5, read_timeout: 15) do |http|
         http.max_retries = 0
         return inspector_response(http, request) if method == 'GET' && path == '/api/inspector/metadata'
+        return entitlement_response(http, request) if method == 'GET' && path == '/api/entitlements/runtime'
         http.request(request)
       end
       raise Error.new(response.code.to_i, 'Intelligence platform request failed') unless response.code.to_i.between?(200, 299)
       response.body.nil? || response.body.empty? ? nil : JSON.parse(response.body)
     rescue JSON::ParserError
+      if method == 'GET' && path == '/api/entitlements/runtime'
+        raise RuntimeEntitlementError.new(502, 'Invalid Runtime entitlement response', false), cause: nil
+      end
       raise Error.new(502, 'Invalid platform response')
     rescue IOError, SystemCallError, Timeout::Error, SocketError
       raise Error.new(502, 'Intelligence platform is unreachable')
@@ -71,6 +85,20 @@ module CopilotKit
       end
     end
     private :inspector_response
+
+    # Inspect rejected statuses before reading bodies that can stall or contain secrets.
+    def entitlement_response(http, request)
+      http.request(request) do |response|
+        status = response.code.to_i
+        unless status.between?(200, 299)
+          raise RuntimeEntitlementError.new(status, 'Runtime entitlement request rejected', [408, 425, 429].include?(status) || status >= 500), cause: nil
+        end
+        body = response.body
+        raise RuntimeEntitlementError.new(502, 'Invalid Runtime entitlement response', false), cause: nil if body.nil? || body.empty?
+        return JSON.parse(body)
+      end
+    end
+    private :entitlement_response
   end
 
   # Programmatic Intelligence SDK. Requiring this file does not load Runtime or Rack.
@@ -91,6 +119,8 @@ module CopilotKit
       @transport = transport || Platform.new(@api_url, api_key)
       @listeners = { created: [], updated: [], deleted: [] }
       @listener_mutex = Mutex.new
+      @entitlement_mutex = Mutex.new
+      @entitlement_cache = nil
     end
 
     # Shared SDK transport used by Runtime. Credentials always come from this client.
@@ -114,6 +144,48 @@ module CopilotKit
     rescue StandardError
       raise Error.new(502, 'Inspector metadata request failed'), cause: nil
     end
+
+    # @return [Hash] A normalized ready grant or structured non-ready result.
+    def get_runtime_entitlements
+      @entitlement_mutex.synchronize do
+        unless @entitlement_cache && entitlement_now < @entitlement_cache.first
+          begin
+            value = fetch_runtime_entitlements
+            active = value['status'] == 'ready' && value['entitlement']['active']
+            @entitlement_cache = [entitlement_now + (active ? 30 : 5), value]
+          rescue RuntimeEntitlementError => error
+            @entitlement_cache = [entitlement_now + 5, error]
+          end
+        end
+        value = @entitlement_cache.last
+        if value.is_a?(RuntimeEntitlementError)
+          raise RuntimeEntitlementError.new(value.status, value.message, value.retryable), cause: nil
+        end
+        RuntimeEntitlements.copy(value)
+      end
+    end
+
+    # Bound the whole platform request and keep cached failures safe for every caller.
+    def fetch_runtime_entitlements
+      Timeout.timeout(1.5) do
+        value = RuntimeEntitlements.parse(request('GET', '/api/entitlements/runtime'))
+        raise RuntimeEntitlementError.new(502, 'Invalid Runtime entitlement response', false), cause: nil unless value
+        value
+      end
+    rescue RuntimeEntitlementError => error
+      raise RuntimeEntitlementError.new(error.status, 'Runtime entitlement request failed', error.retryable), cause: nil
+    rescue Timeout::Error
+      raise RuntimeEntitlementError.new(504, 'Runtime entitlement request timed out', true), cause: nil
+    rescue Error => error
+      raise RuntimeEntitlementError.new(error.status, 'Runtime entitlement request rejected', [408, 425, 429].include?(error.status) || error.status >= 500), cause: nil
+    rescue StandardError
+      raise RuntimeEntitlementError.new(502, 'Runtime entitlement connection failed', true), cause: nil
+    end
+
+    def entitlement_now
+      Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    end
+    private :fetch_runtime_entitlements, :entitlement_now
 
     # Register a creation listener; the returned Proc removes it.
     def on_thread_created(&callback)

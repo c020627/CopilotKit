@@ -193,13 +193,22 @@ module CopilotKit
 
     def info
       entitlement = begin
-        @platform.request('GET', '/api/entitlements/runtime')
-      rescue Error
-        { 'status' => 'unavailable', 'error' => { 'code' => 'runtime_entitlements_unavailable', 'message' => 'Runtime entitlement lookup failed', 'retryable' => true } }
+        @intelligence.get_runtime_entitlements
+      rescue StandardError => error
+        retryable = !error.is_a?(RuntimeEntitlementError) || error.retryable
+        { 'status' => retryable ? 'unavailable' : 'misconfigured', 'error' => {
+          'code' => retryable ? 'runtime_entitlements_unavailable' : 'runtime_entitlements_misconfigured',
+          'message' => retryable ? 'Runtime entitlement lookup failed' : 'Runtime entitlement lookup is misconfigured',
+          'retryable' => retryable } }
+      end
+      license_status = if entitlement['status'] == 'ready'
+        entitlement['entitlement']['active'] ? 'valid' : 'none'
+      else
+        entitlement['error']['retryable'] ? 'unknown' : 'none'
       end
       result = { 'version' => '0.1.0', 'mode' => 'intelligence', 'agents' => @agents.to_h { |id, agent| [id, { 'name' => id, 'description' => agent.description, 'className' => agent.class.name }] },
         'intelligence' => { 'wsUrl' => @client_url }, 'runtimeEntitlements' => entitlement,
-        'licenseStatus' => entitlement.dig('entitlement', 'active') ? 'valid' : 'none',
+        'licenseStatus' => license_status,
         'threadEndpoints' => { 'list' => true, 'inspect' => true, 'mutations' => true, 'realtimeMetadata' => true },
         'audioFileTranscriptionEnabled' => false, 'a2uiEnabled' => !!@a2ui && @a2ui['enabled'] != false, 'openGenerativeUIEnabled' => false,
         'suggestions' => false, 'telemetryDisabled' => @telemetry.disabled? }

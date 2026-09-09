@@ -97,6 +97,39 @@ It never forwards browser credentials to Intelligence.
 Responses use `Cache-Control: no-store, private`. Provider errors produce an empty 204 response and call `on_error`.
 The `/info` response advertises the route through `inspectorMetadata: true`.
 
+## Read Runtime entitlements
+
+Read the Runtime grant without a web server:
+
+```ruby
+result = intelligence.get_runtime_entitlements
+if result.fetch('status') == 'ready'
+  puts result.fetch('entitlement').fetch('active')
+else
+  puts result.fetch('error').fetch('code')
+end
+```
+
+The result is a string-keyed hash. A ready result contains the grant, features, and limits.
+Its `active` value determines Runtime access.
+Other results have status `degraded`, `misconfigured`, or `unavailable` and contain a structured error.
+The SDK accepts both current responses and legacy flat responses.
+
+Concurrent threads share one lookup. Each caller receives a separate copy.
+Active grants remain in the cache for 30 seconds. Other results and request errors remain for five seconds.
+After expiry, the SDK requests a fresh result. A failed lookup does not return an expired grant.
+The cache uses a monotonic clock, so changes to the system clock do not extend grants.
+
+The full request deadline is 1.5 seconds, including the response body.
+`CopilotKit::RuntimeEntitlementError` extends `CopilotKit::Error` with a `retryable` value.
+Invalid responses use status 502 with `retryable: false`. Timeouts use status 504 with `retryable: true`.
+The default transport closes the connection and excludes private response bodies from errors.
+Custom transports must release per-request resources in `ensure` blocks.
+
+The Runtime uses this SDK method and cache for `/info`.
+Configuration errors produce a non-retryable `misconfigured` result.
+Retryable failures produce an `unavailable` result and an `unknown` compatibility license status.
+
 ## Install
 
 1. Add the gem from your checkout to your application's `Gemfile`:
