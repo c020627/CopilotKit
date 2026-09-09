@@ -151,6 +151,27 @@ Archive and removal methods return `Task` without a result.
 Inspection methods use project-level authorization rather than a user filter.
 Reuse `clientEventId` when you retry an annotation with the same content.
 
+## Read Runtime entitlements
+
+```csharp
+RuntimeEntitlementResponse result = await intelligence.GetRuntimeEntitlementsAsync();
+if (result.Entitlement is { Active: true } grant)
+    Console.WriteLine(grant.PlanCode);
+```
+
+A `Ready` response contains `Entitlement`. Other states contain `Error`, with a code, message, and retry flag.
+The SDK accepts current and legacy responses and rejects malformed grants.
+Results use typed records with immutable feature and limit maps.
+
+Concurrent callers share one request with a 1.5-second deadline. Each caller can cancel independently through its `CancellationToken`.
+Active grants remain in the cache for 30 seconds. Other results and lookup failures remain for five seconds.
+The SDK does not reuse an expired grant after a failed refresh.
+`RuntimeEntitlementException` inherits `IntelligenceException` and adds `Retryable`.
+Errors omit private response bodies and transport details.
+
+Runtime `/info` uses this SDK cache and includes the compatibility field `licenseStatus`.
+SDK disposal cancels pending entitlement requests and clears the cache.
+
 ## Manage connections and errors
 
 Reuse one SDK client across requests.
@@ -159,7 +180,9 @@ The default client renews pooled connections after two minutes and blocks redire
 Responses have a 16 MiB limit. The SDK does not retry requests automatically.
 
 Every asynchronous method accepts a `CancellationToken`.
-Cancellation and request deadlines raise `OperationCanceledException`.
+Caller cancellation raises `OperationCanceledException`.
+Entitlement deadlines raise `RuntimeEntitlementException` with status 504 and `Retryable` set to `true`.
+Other request deadlines raise `OperationCanceledException`.
 `IntelligenceException.StatusCode` retains the platform HTTP status.
 Transport errors and invalid responses use status 502 without private response content.
 

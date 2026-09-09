@@ -94,6 +94,7 @@ await RunnerTests.RunAsync();
 await SdkInjectionTests.RunAsync();
 await SdkLifecycleTests.RunAsync();
 await InspectorRuntimeTests.RunAsync();
+await EntitlementRuntimeTests.RunAsync();
 
 sealed class CaptureAgent : IRuntimeAgent
 {

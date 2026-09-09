@@ -21,7 +21,7 @@ public sealed class IntelligenceOptions
 }
 
 /// <summary>A safe platform error that retains the HTTP status without response bodies.</summary>
-public sealed class IntelligenceException(int statusCode, string message) : Exception(message)
+public class IntelligenceException(int statusCode, string message) : Exception(message)
 {
     /// <summary>The platform status, or 502 for an invalid response or transport failure.</summary>
     public int StatusCode { get; } = statusCode;
@@ -130,10 +130,17 @@ public sealed partial class IntelligenceClient : IDisposable
         return thread;
     }
 
-    /// <summary>Releases connections owned by this SDK.</summary>
+    /// <summary>Cancels entitlement lookups, clears their cache, and releases SDK-owned connections.</summary>
     public void Dispose()
     {
         if (Interlocked.Exchange(ref disposed, 1) != 0) return;
+        lock (entitlementGate)
+        {
+            entitlementCache = null;
+            var pending = entitlementFlight;
+            entitlementFlight = null;
+            pending?.Cancellation.Cancel();
+        }
         if (ownsHttp) http.Dispose();
     }
 }

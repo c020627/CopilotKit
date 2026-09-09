@@ -166,9 +166,17 @@ public sealed class IntelligenceRuntime : IAsyncDisposable
 
     private async Task<JsonObject> InfoAsync(CancellationToken ct)
     {
-        JsonNode? entitlement;
-        try { entitlement = await PlatformAsync("GET", "/api/entitlements/runtime", null, null, ct); }
-        catch (Exception) { entitlement = new JsonObject { ["status"] = "unavailable", ["error"] = new JsonObject { ["code"] = "RUNTIME_ENTITLEMENT_UNAVAILABLE", ["message"] = "Intelligence entitlement unavailable", ["retryable"] = true } }; }
+        RuntimeEntitlementResponse entitlement;
+        try { entitlement = await Intelligence.GetRuntimeEntitlementsAsync(ct); }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+        catch (RuntimeEntitlementException error) when (!error.Retryable)
+        {
+            entitlement = new(RuntimeEntitlementStatus.Misconfigured, Error: new("runtime_entitlements_misconfigured", "Runtime entitlement lookup is misconfigured", false));
+        }
+        catch (Exception)
+        {
+            entitlement = new(RuntimeEntitlementStatus.Unavailable, Error: new("runtime_entitlements_unavailable", "Runtime entitlement lookup failed", true));
+        }
         var agents = new JsonObject();
         foreach (var pair in options.Agents) agents[pair.Key] = new JsonObject { ["name"] = pair.Key, ["description"] = pair.Value.Description, ["className"] = pair.Value.GetType().Name };
         var info = new JsonObject
@@ -177,8 +185,8 @@ public sealed class IntelligenceRuntime : IAsyncDisposable
             ["audioFileTranscriptionEnabled"] = false, ["a2uiEnabled"] = options.A2UI?.Enabled == true, ["openGenerativeUIEnabled"] = false,
             ["threadEndpoints"] = new JsonObject { ["list"] = true, ["inspect"] = true, ["mutations"] = true, ["realtimeMetadata"] = true },
             ["intelligence"] = new JsonObject { ["wsUrl"] = options.ClientUrl.ToString().TrimEnd('/') },
-            ["suggestions"] = false, ["inspectorMetadata"] = true, ["telemetryDisabled"] = telemetry.Disabled, ["runtimeEntitlements"] = entitlement,
-            ["licenseStatus"] = entitlement?["status"]?.GetValue<string>() == "ready" && entitlement?["entitlement"]?["active"]?.GetValue<bool>() == true ? "valid" : "invalid"
+            ["suggestions"] = false, ["inspectorMetadata"] = true, ["telemetryDisabled"] = telemetry.Disabled, ["runtimeEntitlements"] = JsonSerializer.SerializeToNode(entitlement),
+            ["licenseStatus"] = entitlement.Entitlement?.Active == true ? "valid" : entitlement.Error?.Retryable == true ? "unknown" : "none"
         };
         if (options.A2UI?.Enabled == true)
         {

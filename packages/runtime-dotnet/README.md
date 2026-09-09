@@ -126,6 +126,8 @@ Provider errors also reach `OnError` with operation `inspector.metadata` and cod
 
 The Runtime uses the standalone SDK for platform requests.
 You can share that SDK with application code that reads threads, uses Memory, or records feedback.
+`/info` shares the SDK's entitlement cache and returns normalized `runtimeEntitlements`.
+The compatibility field `licenseStatus` reports `valid`, `none`, or `unknown` from that result.
 
 1. Before the Runtime registration in the host example, register the SDK:
 
