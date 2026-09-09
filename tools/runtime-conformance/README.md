@@ -58,9 +58,12 @@ The driver mounts the library without reimplementing routes, middleware, telemet
 
 ## Coverage
 
-The suite has 77 cases. These include 16 initial cases, 16 UI cases, and 18 additional analytics cases.
+The suite has 99 cases. These include 16 initial cases, 16 UI cases, and 18 additional analytics cases.
 Eleven runner cases, nine access cases, and one frontend-client case cover the remaining requirements.
 Six Inspector metadata cases cover discovery, independent module validation, action URLs, private responses, server credentials, and the five-second deadline.
+Twenty-two entitlement cases cover current and legacy responses, schema validation, safe errors, server credentials, concurrent requests, and the response-header deadline.
+They also verify cache expiry for active grants, inactive grants, and lookup failures through public `/info` requests.
+The active-grant case waits 31 seconds before a failed refresh, then verifies recovery after the five-second failure cache expires.
 The UI cases cover A2UI validation, progressive data, action history, MCP calls, and iframe request boundaries.
 Analytics cases cover canonical events, timestamps, sampling, identity, privacy, and opt-out.
 Seven cases cover legacy license identity, environment fallback, whitespace rules, standalone identity precedence, malformed tokens, and opt-out precedence.

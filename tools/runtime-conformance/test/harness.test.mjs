@@ -37,6 +37,23 @@ test("misspelled case filters fail instead of reporting zero passing cases", asy
   );
 });
 
+test("entitlement conformance rejects a JSON stub without normalized authority", async () => {
+  const results = await runSuite(
+    [
+      process.execPath,
+      fileURLToPath(new URL("./broken-driver.mjs", import.meta.url)),
+    ],
+    { filter: "entitlements.current" },
+  );
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].status, "failed");
+  assert.match(
+    results[0].error,
+    /entitlements must match the platform contract/,
+  );
+});
+
 test("missing driver executable produces a failed case without an unhandled rejection", async () => {
   const results = await runSuite(["/nonexistent/cpk-fixture-driver"], {
     filter: "connect.blank-is-read-only",

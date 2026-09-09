@@ -6,6 +6,7 @@ import { runnerCases } from "./runner-cases.mjs";
 import { clientCases } from "./client-cases.mjs";
 import { accessCases } from "./access-cases.mjs";
 import { inspectorCases } from "./inspector-cases.mjs";
+import { entitlementCases } from "./entitlement-cases.mjs";
 
 /** A complete AG-UI input accepted by the reference RunAgentInput schema. */
 export function runInput(overrides = {}) {
@@ -23,6 +24,7 @@ export function runInput(overrides = {}) {
 
 /** Inspect both the browser response and platform effects for every case. */
 export const cases = [
+  ...entitlementCases,
   ...inspectorCases,
   ...accessCases,
   ...clientCases,
