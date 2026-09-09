@@ -2,11 +2,6 @@ import { afterEach, describe, it, expect, vi } from "vitest";
 import { render, act, waitFor } from "@testing-library/react";
 import React, { useState } from "react";
 import type { Theme } from "@copilotkit/a2ui-renderer";
-import {
-  createA2UIMessageRenderer,
-  runA2UIAction,
-  warnAboutUnresolvedRoot,
-} from "../a2ui/A2UIMessageRenderer.js";
 
 // Imported statically, NOT with `await import()` inside each test.
 //
