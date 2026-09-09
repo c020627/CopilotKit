@@ -41,23 +41,23 @@ internal static class ResourceTests
             new("state", "GET", "/api/_inspect/threads/thread/state", null, "{\"state\":{},\"hasStateSnapshot\":false}", client => client.GetThreadStateAsync("thread")),
             new("list memories", "GET", "/api/memories?includeInvalidated=true", null, "{\"memories\":[]}", client => client.ListMemoriesAsync("user", grant, true), true, true),
             new("create memory", "POST", "/api/memories", "{\"content\":\"Fact\",\"kind\":\"topical\",\"scope\":\"project\",\"sourceThreadIds\":[\"thread\"]}",
-                "{\"id\":\"memory\",\"absorbed\":true}", async client =>
+                "{\"id\":\"memory\",\"kind\":\"topical\",\"scope\":\"project\",\"content\":\"Fact\",\"sourceThreadIds\":[\"thread\"],\"invalidatedAt\":null,\"absorbed\":true}", async client =>
                 {
                     var result = await client.CreateMemoryAsync("user", "Fact", "topical", "project", ["thread"], grant);
-                    Check(result["absorbed"]!.GetValue<bool>(), "create retains absorbed marker");
+                    Check(result.Absorbed == true, "create retains absorbed marker");
                 }, true, true),
             new("update memory", "PATCH", "/api/memories/memory%2Fid", "{\"content\":\"New fact\",\"kind\":\"topical\",\"sourceThreadIds\":[]}",
-                "{\"id\":\"replacement\",\"retiredId\":\"memory/id\"}", async client =>
+                "{\"id\":\"replacement\",\"kind\":\"topical\",\"scope\":\"user\",\"content\":\"New fact\",\"sourceThreadIds\":[],\"invalidatedAt\":null,\"retiredId\":\"memory/id\"}", async client =>
                 {
                     var result = await client.UpdateMemoryAsync("memory/id", "user", "New fact", "topical");
-                    Check(result["retiredId"]!.GetValue<string>() == "memory/id", "update retains retired ID");
+                    Check(result.RetiredId == "memory/id", "update retains retired ID");
                 }, true),
             new("remove memory", "DELETE", "/api/memories/memory", null, "", client => client.RemoveMemoryAsync("memory", "user", grant), true, true),
             new("recall memory", "POST", "/api/memories/recall", "{\"query\":\"question\",\"limit\":3,\"scope\":\"user\"}",
-                "{\"memories\":[{\"id\":\"memory\",\"score\":0.75}]}", async client =>
+                "{\"memories\":[{\"id\":\"memory\",\"kind\":\"topical\",\"scope\":\"user\",\"content\":\"Fact\",\"sourceThreadIds\":[],\"invalidatedAt\":null,\"score\":0.75}]}", async client =>
                 {
                     var result = await client.RecallMemoriesAsync("user", "question", 3, "user", grant);
-                    Check(result["memories"]![0]!["score"]!.GetValue<double>() == .75, "recall retains score");
+                    Check(result.Memories[0].Score == .75, "recall retains score");
                 }, true, true),
             new("annotation", "PUT", "/connector/annotate/event%2Fid", "{\"type\":\"feedback\",\"userId\":\"user\",\"threadId\":\"thread\",\"payload\":{\"rating\":1},\"occurredAt\":\"2026-09-09T00:00:00Z\"}",
                 "{\"id\":\"event/id\",\"duplicate\":true}", async client =>

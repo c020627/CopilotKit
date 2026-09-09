@@ -95,33 +95,33 @@ public sealed partial class IntelligenceClient
         => Object(await RequestAsync(HttpMethod.Get, "/api/_inspect/threads/" + Segment(threadId) + "/state", cancellationToken: cancellationToken));
 
     /// <summary>Lists Memory for an application user under an optional trusted grant.</summary>
-    public async Task<JsonObject> ListMemoriesAsync(string userId, MemoryGrant? grant = null,
+    public async Task<ListMemoriesResponse> ListMemoriesAsync(string userId, MemoryGrant? grant = null,
         bool includeInvalidated = false, CancellationToken cancellationToken = default)
-        => Object(await RequestAsync(HttpMethod.Get, "/api/memories" + (includeInvalidated ? "?includeInvalidated=true" : ""),
+        => Resource<ListMemoriesResponse>(await RequestAsync(HttpMethod.Get, "/api/memories" + (includeInvalidated ? "?includeInvalidated=true" : ""),
             cancellationToken: cancellationToken, headers: MemoryHeaders(userId, grant)));
 
     /// <summary>Creates a memory and retains the platform's absorbed marker.</summary>
-    public async Task<JsonObject> CreateMemoryAsync(string userId, string content, string kind, string? scope = null,
+    public async Task<SaveMemoryResponse> CreateMemoryAsync(string userId, string content, string kind, string? scope = null,
         IReadOnlyList<string>? sourceThreadIds = null, MemoryGrant? grant = null, CancellationToken cancellationToken = default)
-        => Object(await RequestAsync(HttpMethod.Post, "/api/memories", MemoryBody(content, kind, scope, sourceThreadIds), cancellationToken, MemoryHeaders(userId, grant)));
+        => Resource<SaveMemoryResponse>(await RequestAsync(HttpMethod.Post, "/api/memories", MemoryBody(content, kind, scope, sourceThreadIds), cancellationToken, MemoryHeaders(userId, grant)));
 
     /// <summary>Supersedes a memory and returns its replacement and retired ID.</summary>
-    public async Task<JsonObject> UpdateMemoryAsync(string memoryId, string userId, string content, string kind, string? scope = null,
+    public async Task<SaveMemoryResponse> UpdateMemoryAsync(string memoryId, string userId, string content, string kind, string? scope = null,
         IReadOnlyList<string>? sourceThreadIds = null, MemoryGrant? grant = null, CancellationToken cancellationToken = default)
-        => Object(await RequestAsync(HttpMethod.Patch, "/api/memories/" + Segment(memoryId), MemoryBody(content, kind, scope, sourceThreadIds), cancellationToken, MemoryHeaders(userId, grant)));
+        => Resource<SaveMemoryResponse>(await RequestAsync(HttpMethod.Patch, "/api/memories/" + Segment(memoryId), MemoryBody(content, kind, scope, sourceThreadIds), cancellationToken, MemoryHeaders(userId, grant)));
 
     /// <summary>Retires a memory without deleting its history.</summary>
     public async Task RemoveMemoryAsync(string memoryId, string userId, MemoryGrant? grant = null, CancellationToken cancellationToken = default)
         => await RequestAsync(HttpMethod.Delete, "/api/memories/" + Segment(memoryId), cancellationToken: cancellationToken, headers: MemoryHeaders(userId, grant));
 
     /// <summary>Recalls relevant memories with their relevance scores.</summary>
-    public async Task<JsonObject> RecallMemoriesAsync(string userId, string query, int? limit = null, string? scope = null,
+    public async Task<RecallMemoriesResponse> RecallMemoriesAsync(string userId, string query, int? limit = null, string? scope = null,
         MemoryGrant? grant = null, CancellationToken cancellationToken = default)
     {
         var body = new JsonObject { ["query"] = query };
         if (limit is not null) body["limit"] = limit;
         if (scope is not null) body["scope"] = scope;
-        return Object(await RequestAsync(HttpMethod.Post, "/api/memories/recall", body, cancellationToken, MemoryHeaders(userId, grant)));
+        return Resource<RecallMemoriesResponse>(await RequestAsync(HttpMethod.Post, "/api/memories/recall", body, cancellationToken, MemoryHeaders(userId, grant)));
     }
 
     /// <summary>Writes an annotation. Reuse the client event ID for an idempotent retry.</summary>

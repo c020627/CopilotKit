@@ -117,7 +117,10 @@ internal static class LifecycleTests
         }
         await sdk.GetThreadAsync("thread", "user");
         await sdk.ListThreadsAsync("user", "agent");
+        const string memory = "{\"id\":\"memory\",\"kind\":\"fact\",\"scope\":\"user\",\"content\":\"content\",\"sourceThreadIds\":[],\"invalidatedAt\":null}";
+        handler.Responses.Enqueue((HttpStatusCode.OK, memory));
         await sdk.CreateMemoryAsync("user", "content", "fact");
+        handler.Responses.Enqueue((HttpStatusCode.OK, memory));
         await sdk.UpdateMemoryAsync("memory", "user", "content", "fact");
         await sdk.RemoveMemoryAsync("memory", "user");
         await sdk.AnnotateAsync("user", "thread", "feedback");

@@ -101,9 +101,9 @@ var result = await intelligence.RecallMemoriesAsync(
     limit: 5,
     grant: grant);
 
-foreach (var memory in result["memories"]!.AsArray())
+foreach (var memory in result.Memories)
 {
-    Console.WriteLine(memory?["content"]);
+    Console.WriteLine(memory.Content);
 }
 ```
 
@@ -146,6 +146,9 @@ Resource methods return `JsonObject` values and preserve platform fields.
 Thread reads and mutations return the thread without its response envelope.
 Lists retain their envelopes, including pagination and subscription credentials.
 Memory results retain relevance scores, absorbed markers, and retired IDs.
+`ListMemoriesResponse` and `RecallMemoriesResponse` expose a `Memories` list of `MemorySummary` records.
+`SaveMemoryResponse` exposes `Absorbed` and `RetiredId` alongside the stored Memory fields.
+Each record retains unknown platform fields in `ExtensionData` as JSON values.
 Archive and removal methods return `Task` without a result.
 
 Inspection methods use project-level authorization rather than a user filter.
