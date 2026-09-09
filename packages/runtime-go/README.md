@@ -75,6 +75,17 @@ Your application controls when to close a custom transport or a transport suppli
 Pass this client as `runtime.Config{Intelligence: client, IdentifyUser: identifyUser, Agents: agents}` to mount Runtime routes.
 The Runtime borrows the client. Existing `APIKey` constructors remain valid.
 
+`GetRuntimeEntitlements(ctx)` returns a typed `RuntimeEntitlementResponse` without a Runtime server.
+A `ready` response contains `Entitlement`. Other responses contain `Error`, with a code, message, and retry flag.
+The SDK accepts current and legacy platform responses and rejects malformed grants.
+
+Concurrent callers share one request with a 1.5-second deadline. Each caller can cancel independently through its context.
+Active grants remain in the cache for 30 seconds. Other results and lookup failures remain for five seconds.
+Each caller receives a copy. The SDK does not reuse an expired grant after a failed refresh.
+`RuntimeEntitlementError` exposes `Status` and `Retryable` without private response bodies or transport details.
+Runtime `/info` uses this SDK cache and includes the compatibility field `licenseStatus`.
+`Close` cancels pending entitlement requests and clears the cache.
+
 Replace `/path/to/CopilotKit` with your checkout path. Run these commands from
 an application directory with a `go.mod` file.
 

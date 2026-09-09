@@ -137,14 +137,15 @@ type AnnotationResult struct {
 	Duplicate bool   `json:"duplicate,omitempty"`
 }
 
-// Client is a reusable, context-aware SDK client. It starts no server or background task.
+// Client is a reusable, context-aware SDK client. It owns no HTTP server.
 type Client struct {
-	config     Config
-	httpClient *http.Client
-	owned      bool
-	created    listeners[Thread]
-	updated    listeners[Thread]
-	deleted    listeners[ThreadDeletedPayload]
+	config       Config
+	httpClient   *http.Client
+	owned        bool
+	created      listeners[Thread]
+	updated      listeners[Thread]
+	deleted      listeners[ThreadDeletedPayload]
+	entitlements entitlementState
 }
 
 // New validates credentials and endpoints without making network requests.
@@ -196,8 +197,17 @@ func (c *Client) Configuration() Config {
 	return config
 }
 
-// Close releases only this client's owned idle connections. Borrowed transports stay usable.
+// Close cancels entitlement lookups, clears their cache, and releases owned idle connections.
+// Borrowed transports stay usable.
 func (c *Client) Close() {
+	c.entitlements.mu.Lock()
+	if c.entitlements.flight != nil {
+		c.entitlements.flight.cancel()
+		c.entitlements.flight = nil
+	}
+	c.entitlements.response, c.entitlements.err = nil, nil
+	c.entitlements.expires = time.Time{}
+	c.entitlements.mu.Unlock()
 	if c.owned {
 		c.httpClient.CloseIdleConnections()
 	}

@@ -455,9 +455,20 @@ func (r *Runtime) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	r.rest(w, req, user, parts)
 }
 func (r *Runtime) info(w http.ResponseWriter, req *http.Request) {
-	ent, e := r.platform(req.Context(), "GET", "/api/entitlements/runtime", nil, nil)
+	ent, e := r.intelligence.GetRuntimeEntitlements(req.Context())
 	if e != nil {
-		ent = map[string]any{"status": "unavailable", "error": map[string]any{"code": "PLATFORM_UNAVAILABLE", "message": "Intelligence unavailable", "retryable": true}}
+		var failure *intelligence.RuntimeEntitlementError
+		if errors.As(e, &failure) && !failure.Retryable {
+			ent = &intelligence.RuntimeEntitlementResponse{Status: "misconfigured", Error: &intelligence.RuntimeEntitlementProblem{Code: "runtime_entitlements_misconfigured", Message: "Runtime entitlement lookup is misconfigured", Retryable: false}}
+		} else {
+			ent = &intelligence.RuntimeEntitlementResponse{Status: "unavailable", Error: &intelligence.RuntimeEntitlementProblem{Code: "runtime_entitlements_unavailable", Message: "Runtime entitlement lookup failed", Retryable: true}}
+		}
+	}
+	licenseStatus := "none"
+	if ent.Entitlement != nil && ent.Entitlement.Active {
+		licenseStatus = "valid"
+	} else if ent.Error != nil && ent.Error.Retryable {
+		licenseStatus = "unknown"
 	}
 	agents := map[string]any{}
 	for id, agent := range r.config.Agents {
@@ -470,6 +481,7 @@ func (r *Runtime) info(w http.ResponseWriter, req *http.Request) {
 	info := map[string]any{"version": "0.1.0", "mode": "intelligence", "agents": agents, "intelligence": map[string]any{"wsUrl": r.config.ClientURL}, "runtimeEntitlements": ent, "threadEndpoints": map[string]any{"list": true, "inspect": true, "mutations": true, "realtimeMetadata": true}, "a2uiEnabled": r.config.A2UI != nil && (r.config.A2UI.Enabled == nil || *r.config.A2UI.Enabled), "audioFileTranscriptionEnabled": false, "openGenerativeUIEnabled": false, "telemetryDisabled": r.config.TelemetryDisabled}
 	info["telemetryDisabled"] = r.telemetry.disabled
 	info["inspectorMetadata"] = true
+	info["licenseStatus"] = licenseStatus
 	if info["a2uiEnabled"] == true {
 		a2ui := map[string]any{"enabled": true}
 		if len(r.config.A2UI.Agents) > 0 {
