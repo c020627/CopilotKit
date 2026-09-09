@@ -142,14 +142,15 @@ A shorter configured deadline or caller cancellation also applies.
 | Memory   | `ListMemoriesAsync`, `CreateMemoryAsync`, `UpdateMemoryAsync`, `RemoveMemoryAsync`, `RecallMemoriesAsync`                                           |
 | Feedback | `AnnotateAsync`                                                                                                                                     |
 
-Resource methods return `JsonObject` values and preserve platform fields.
+Thread, history, and annotation methods return `JsonObject` values and preserve platform fields.
 Thread reads and mutations return the thread without its response envelope.
 Lists retain their envelopes, including pagination and subscription credentials.
+Archive and removal methods return `Task` without a result.
+
 Memory results retain relevance scores, absorbed markers, and retired IDs.
 `ListMemoriesResponse` and `RecallMemoriesResponse` expose a `Memories` list of `MemorySummary` records.
 `SaveMemoryResponse` exposes `Absorbed` and `RetiredId` alongside the stored Memory fields.
 Each record retains unknown platform fields in `ExtensionData` as JSON values.
-Archive and removal methods return `Task` without a result.
 
 Inspection methods use project-level authorization rather than a user filter.
 Reuse `clientEventId` when you retry an annotation with the same content.
