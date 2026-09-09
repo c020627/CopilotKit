@@ -9,7 +9,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from time import monotonic as _entitlement_now
 from types import TracebackType
-from typing import Any, Literal, Self
+from typing import Any, Literal, Self, cast
 from urllib.parse import quote, unquote, urlsplit
 from uuid import uuid4
 
@@ -17,6 +17,7 @@ import httpx
 
 from .entitlements import RuntimeEntitlementResponse, normalize_runtime_entitlements
 from .inspector import InspectorMetadata, parse_inspector_metadata
+from .resources import ListMemoriesResponse, RecallMemoriesResponse, SaveMemoryResponse
 
 Json = dict[str, Any]
 Access = Literal["none", "read", "read-write"]
@@ -382,13 +383,16 @@ class Intelligence:
         user_id: str,
         memory_grant: MemoryGrant | None = None,
         include_invalidated: bool = False,
-    ) -> Json:
+    ) -> ListMemoriesResponse:
         """List memories; include retired entries only when requested."""
-        return await self._object(
-            "GET",
-            "/api/memories",
-            query={"includeInvalidated": "true"} if include_invalidated else None,
-            headers=self._memory_headers(user_id, memory_grant),
+        return cast(
+            ListMemoriesResponse,
+            await self._object(
+                "GET",
+                "/api/memories",
+                query={"includeInvalidated": "true"} if include_invalidated else None,
+                headers=self._memory_headers(user_id, memory_grant),
+            ),
         )
 
     async def create_memory(
@@ -400,13 +404,16 @@ class Intelligence:
         scope: str | None = None,
         source_thread_ids: list[str] | None = None,
         memory_grant: MemoryGrant | None = None,
-    ) -> Json:
+    ) -> SaveMemoryResponse:
         """Save a memory, retaining the platform's absorbed marker."""
         body: Json = {"content": content, "kind": kind, "sourceThreadIds": source_thread_ids or []}
         if scope is not None:
             body["scope"] = scope
-        return await self._object(
-            "POST", "/api/memories", body, headers=self._memory_headers(user_id, memory_grant)
+        return cast(
+            SaveMemoryResponse,
+            await self._object(
+                "POST", "/api/memories", body, headers=self._memory_headers(user_id, memory_grant)
+            ),
         )
 
     async def update_memory(
@@ -419,16 +426,19 @@ class Intelligence:
         scope: str | None = None,
         source_thread_ids: list[str] | None = None,
         memory_grant: MemoryGrant | None = None,
-    ) -> Json:
+    ) -> SaveMemoryResponse:
         """Supersede a memory and return its replacement and retired ID."""
         body: Json = {"content": content, "kind": kind, "sourceThreadIds": source_thread_ids or []}
         if scope is not None:
             body["scope"] = scope
-        return await self._object(
-            "PATCH",
-            "/api/memories/" + segment(memory_id),
-            body,
-            headers=self._memory_headers(user_id, memory_grant),
+        return cast(
+            SaveMemoryResponse,
+            await self._object(
+                "PATCH",
+                "/api/memories/" + segment(memory_id),
+                body,
+                headers=self._memory_headers(user_id, memory_grant),
+            ),
         )
 
     async def remove_memory(
@@ -449,18 +459,21 @@ class Intelligence:
         limit: int | None = None,
         scope: str | None = None,
         memory_grant: MemoryGrant | None = None,
-    ) -> Json:
+    ) -> RecallMemoriesResponse:
         """Recall relevant memories with the platform's relevance scores."""
         body: Json = {"query": query}
         if limit is not None:
             body["limit"] = limit
         if scope is not None:
             body["scope"] = scope
-        return await self._object(
-            "POST",
-            "/api/memories/recall",
-            body,
-            headers=self._memory_headers(user_id, memory_grant),
+        return cast(
+            RecallMemoriesResponse,
+            await self._object(
+                "POST",
+                "/api/memories/recall",
+                body,
+                headers=self._memory_headers(user_id, memory_grant),
+            ),
         )
 
     async def list_threads(

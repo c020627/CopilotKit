@@ -43,6 +43,8 @@ The SDK also provides `list_threads`, `get_thread`, `create_thread`, `update_thr
 `delete_thread` permanently deletes a thread and its history.
 
 Memory methods include `list_memories`, `create_memory`, `update_memory`, `remove_memory`, and `recall_memories`.
+Results use public `TypedDict` annotations: `MemorySummary`, `ListMemoriesResponse`, `RecallMemoriesResponse`, and `SaveMemoryResponse`.
+Your editor can show Memory fields, recall scores, and save markers. Results remain dictionaries with the original JSON field names and extension values.
 Pass a `MemoryGrant(user="read-write", project="read")` as `memory_grant` to apply explicit limits.
 Without a grant, Intelligence applies its policy. Every Memory call requires the bare application user ID.
 

@@ -3,6 +3,12 @@
 from .client import Intelligence, IntelligenceError, MemoryGrant, RuntimeEntitlementError
 from .entitlements import RuntimeEntitlementResponse
 from .inspector import InspectorMetadata
+from .resources import (
+    ListMemoriesResponse,
+    MemorySummary,
+    RecallMemoriesResponse,
+    SaveMemoryResponse,
+)
 
 __all__ = [
     "Intelligence",
@@ -11,4 +17,8 @@ __all__ = [
     "InspectorMetadata",
     "RuntimeEntitlementResponse",
     "RuntimeEntitlementError",
+    "MemorySummary",
+    "ListMemoriesResponse",
+    "RecallMemoriesResponse",
+    "SaveMemoryResponse",
 ]
