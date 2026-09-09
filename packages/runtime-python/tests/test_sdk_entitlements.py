@@ -6,7 +6,7 @@ import httpx
 import pytest
 
 import copilotkit_intelligence.client as client_module
-from copilotkit_intelligence import Intelligence, IntelligenceError
+from copilotkit_intelligence import Intelligence, IntelligenceError, RuntimeEntitlementError
 
 
 def ready(active=True):
@@ -316,6 +316,29 @@ async def test_entitlements_sanitize_transport_failures(failure):
     assert caught.value.status == 502 and caught.value.retryable is True
     assert "provider-secret-payload" not in str(caught.value)
     assert caught.value.__cause__ is None
+
+
+async def test_entitlements_sanitize_typed_transport_errors_before_caching():
+    requests = []
+
+    def platform(request):
+        requests.append(request)
+        raise RuntimeEntitlementError(502, "provider-secret-payload", False)
+
+    errors = []
+    async with httpx.AsyncClient(transport=httpx.MockTransport(platform)) as http:
+        sdk = Intelligence(api_key="key", http_client=http)
+        for _ in range(2):
+            with pytest.raises(RuntimeEntitlementError) as caught:
+                await sdk.get_runtime_entitlements()
+            errors.append(caught.value)
+
+    assert len(requests) == 1
+    assert errors[0] is not errors[1]
+    for error in errors:
+        assert error.status == 502 and error.retryable is False
+        assert "provider-secret-payload" not in str(error)
+        assert error.__cause__ is None
 
 
 async def test_entitlements_preserve_shorter_request_deadlines():

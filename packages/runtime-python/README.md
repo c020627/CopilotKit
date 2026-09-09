@@ -124,6 +124,7 @@ After expiry, the SDK requests a fresh result. A failed request does not return 
 The request deadline is 1.5 seconds, including the response body.
 A shorter `request_timeout` also applies.
 `RuntimeEntitlementError` extends `IntelligenceError` with a `retryable` flag.
+Errors retain the HTTP status and retry guidance without transport messages or response bodies.
 Invalid responses use status 502 with `retryable=False`. Timeouts use status 504 with `retryable=True`.
 
 Caller cancellation does not interrupt other callers that await the same request.

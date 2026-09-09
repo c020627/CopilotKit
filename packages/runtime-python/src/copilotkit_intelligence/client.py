@@ -367,8 +367,10 @@ class Intelligence:
             raise RuntimeEntitlementError(
                 504, "Runtime entitlement request timed out", True
             ) from None
-        except RuntimeEntitlementError:
-            raise
+        except RuntimeEntitlementError as error:
+            raise RuntimeEntitlementError(
+                error.status, "Runtime entitlement request failed", error.retryable
+            ) from None
         except Exception:
             raise RuntimeEntitlementError(
                 502, "Runtime entitlement connection failed", True
