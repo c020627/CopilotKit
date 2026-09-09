@@ -142,10 +142,15 @@ A shorter configured deadline or caller cancellation also applies.
 | Memory   | `ListMemoriesAsync`, `CreateMemoryAsync`, `UpdateMemoryAsync`, `RemoveMemoryAsync`, `RecallMemoriesAsync`                                           |
 | Feedback | `AnnotateAsync`                                                                                                                                     |
 
-Thread, history, and annotation methods return `JsonObject` values and preserve platform fields.
+Thread metadata methods return `JsonObject` values and preserve platform fields.
 Thread reads and mutations return the thread without its response envelope.
 Lists retain their envelopes, including pagination and subscription credentials.
 Archive and removal methods return `Task` without a result.
+
+History and annotation methods return native records.
+`ThreadMessagesResponse.Messages` includes structured `Content`, tool calls, and activity types.
+`ThreadEventsResponse.Events` retains custom event fields in `ExtensionData`.
+`AnnotateResponse` exposes the string `Id` and the `Duplicate` marker.
 
 Memory results retain relevance scores, absorbed markers, and retired IDs.
 `ListMemoriesResponse` and `RecallMemoriesResponse` expose a `Memories` list of `MemorySummary` records.
@@ -154,6 +159,29 @@ Each record retains unknown platform fields in `ExtensionData` as JSON values.
 
 Inspection methods use project-level authorization rather than a user filter.
 Reuse `clientEventId` when you retry an annotation with the same content.
+
+## Read thread state
+
+```csharp
+ThreadStateResponse state = await intelligence.GetThreadStateAsync("thread-id");
+switch (state)
+{
+    case ThreadSnapshot snapshot:
+        Console.WriteLine(snapshot.State.GetRawText());
+        Console.WriteLine($"Skipped deltas: {snapshot.SkippedDeltas}");
+        break;
+    case ThreadNoSnapshot:
+        Console.WriteLine("This thread has no state snapshot.");
+        break;
+    case ThreadSnapshotDecodeError:
+        Console.WriteLine("The platform could not decode this snapshot.");
+        break;
+}
+```
+
+State records distinguish a missing snapshot from a snapshot that contains JSON null.
+Message `Content.ValueKind` is `Undefined` for absent content and `Null` for explicit JSON null.
+History, state, and annotation records retain additional response fields in `ExtensionData`.
 
 ## Read Runtime entitlements
 

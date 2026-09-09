@@ -123,6 +123,7 @@ internal static class LifecycleTests
         handler.Responses.Enqueue((HttpStatusCode.OK, memory));
         await sdk.UpdateMemoryAsync("memory", "user", "content", "fact");
         await sdk.RemoveMemoryAsync("memory", "user");
+        handler.Responses.Enqueue((HttpStatusCode.OK, "{\"id\":\"annotation\",\"duplicate\":false}"));
         await sdk.AnnotateAsync("user", "thread", "feedback");
 
         Check(count == 0, "denied or malformed writes, reads, Memory, and annotations emit no thread lifecycle events");

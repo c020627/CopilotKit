@@ -64,33 +64,3 @@ public sealed record SaveMemoryResponse : MemorySummary
     [JsonPropertyName("retiredId"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? RetiredId { get; init; }
 }
-
-public sealed partial class IntelligenceClient
-{
-    private static readonly JsonSerializerOptions ResourceJson = new() { RespectNullableAnnotations = true };
-
-    private static T Resource<T>(System.Text.Json.Nodes.JsonNode? node) where T : class
-    {
-        try
-        {
-            var result = Object(node).Deserialize<T>(ResourceJson)
-                ?? throw new IntelligenceException(502, "Invalid Intelligence resource response");
-            var invalid = result switch
-            {
-                ListMemoriesResponse listed => listed.Memories.Any(InvalidMemory),
-                RecallMemoriesResponse recalled => recalled.Memories.Any(InvalidMemory),
-                MemorySummary memory => InvalidMemory(memory),
-                _ => false
-            };
-            if (invalid) throw new IntelligenceException(502, "Invalid Intelligence resource response");
-            return result;
-        }
-        catch (JsonException)
-        {
-            throw new IntelligenceException(502, "Invalid Intelligence resource response");
-        }
-    }
-
-    private static bool InvalidMemory(MemorySummary? memory)
-        => memory is null || memory.SourceThreadIds.Any(id => id is null);
-}

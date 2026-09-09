@@ -37,8 +37,8 @@ internal static class ResourceTests
             new("delete", "DELETE", "/api/threads/thread", "{\"userId\":\"user\",\"agentId\":\"agent\",\"reason\":\"Deleted via CopilotKit SDK (userId=user, agentId=agent)\"}",
                 "", client => client.DeleteThreadAsync("thread", "user", "agent")),
             new("messages", "GET", "/api/threads/thread/messages?userId=user", null, "{\"messages\":[]}", client => client.GetThreadMessagesAsync("thread", "user")),
-            new("events", "GET", "/api/_inspect/threads/thread/events", null, "{\"events\":[]}", client => client.GetThreadEventsAsync("thread")),
-            new("state", "GET", "/api/_inspect/threads/thread/state", null, "{\"state\":{},\"hasStateSnapshot\":false}", client => client.GetThreadStateAsync("thread")),
+            new("events", "GET", "/api/_inspect/threads/thread/events", null, "{\"events\":[],\"decodeErrorRowIds\":[],\"truncated\":false}", client => client.GetThreadEventsAsync("thread")),
+            new("state", "GET", "/api/_inspect/threads/thread/state", null, "{\"kind\":\"no-snapshot\"}", client => client.GetThreadStateAsync("thread")),
             new("list memories", "GET", "/api/memories?includeInvalidated=true", null, "{\"memories\":[]}", client => client.ListMemoriesAsync("user", grant, true), true, true),
             new("create memory", "POST", "/api/memories", "{\"content\":\"Fact\",\"kind\":\"topical\",\"scope\":\"project\",\"sourceThreadIds\":[\"thread\"]}",
                 "{\"id\":\"memory\",\"kind\":\"topical\",\"scope\":\"project\",\"content\":\"Fact\",\"sourceThreadIds\":[\"thread\"],\"invalidatedAt\":null,\"absorbed\":true}", async client =>
@@ -63,7 +63,7 @@ internal static class ResourceTests
                 "{\"id\":\"event/id\",\"duplicate\":true}", async client =>
                 {
                     var result = await client.AnnotateAsync("user", "thread", "feedback", "event/id", new JsonObject { ["rating"] = 1 }, "2026-09-09T00:00:00Z");
-                    Check(result["duplicate"]!.GetValue<bool>(), "annotation retains duplicate marker");
+                    Check(result.Duplicate, "annotation retains duplicate marker");
                 })
         };
         var failures = new List<string>();

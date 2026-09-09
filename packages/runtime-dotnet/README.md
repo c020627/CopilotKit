@@ -7,6 +7,7 @@ Agents can run in your .NET process or at a remote AG-UI endpoint.
 For scripts and workers, use the separate [Intelligence SDK](sdk/README.md).
 It provides direct thread, Memory, and annotation methods without an ASP.NET Core host or Runtime routes.
 Memory results expose native C# properties, including content, source thread IDs, recall scores, and save markers.
+History and annotation results use native records. State results support C# pattern matching for snapshots, absent snapshots, and decode failures.
 
 ## Install from a local package
 

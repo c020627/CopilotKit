@@ -83,16 +83,16 @@ public sealed partial class IntelligenceClient
     }
 
     /// <summary>Reads persisted messages in chronological order.</summary>
-    public async Task<JsonObject> GetThreadMessagesAsync(string threadId, string userId, CancellationToken cancellationToken = default)
-        => Object(await RequestAsync(HttpMethod.Get, "/api/threads/" + Segment(threadId) + "/messages?userId=" + Segment(userId), cancellationToken: cancellationToken));
+    public async Task<ThreadMessagesResponse> GetThreadMessagesAsync(string threadId, string userId, CancellationToken cancellationToken = default)
+        => Resource<ThreadMessagesResponse>(await RequestAsync(HttpMethod.Get, "/api/threads/" + Segment(threadId) + "/messages?userId=" + Segment(userId), cancellationToken: cancellationToken));
 
     /// <summary>Reads project-authorized events from the inspection API.</summary>
-    public async Task<JsonObject> GetThreadEventsAsync(string threadId, CancellationToken cancellationToken = default)
-        => Object(await RequestAsync(HttpMethod.Get, "/api/_inspect/threads/" + Segment(threadId) + "/events", cancellationToken: cancellationToken));
+    public async Task<ThreadEventsResponse> GetThreadEventsAsync(string threadId, CancellationToken cancellationToken = default)
+        => Resource<ThreadEventsResponse>(await RequestAsync(HttpMethod.Get, "/api/_inspect/threads/" + Segment(threadId) + "/events", cancellationToken: cancellationToken));
 
     /// <summary>Reads folded state and the snapshot-presence marker from the inspection API.</summary>
-    public async Task<JsonObject> GetThreadStateAsync(string threadId, CancellationToken cancellationToken = default)
-        => Object(await RequestAsync(HttpMethod.Get, "/api/_inspect/threads/" + Segment(threadId) + "/state", cancellationToken: cancellationToken));
+    public async Task<ThreadStateResponse> GetThreadStateAsync(string threadId, CancellationToken cancellationToken = default)
+        => Resource<ThreadStateResponse>(await RequestAsync(HttpMethod.Get, "/api/_inspect/threads/" + Segment(threadId) + "/state", cancellationToken: cancellationToken));
 
     /// <summary>Lists Memory for an application user under an optional trusted grant.</summary>
     public async Task<ListMemoriesResponse> ListMemoriesAsync(string userId, MemoryGrant? grant = null,
@@ -125,14 +125,14 @@ public sealed partial class IntelligenceClient
     }
 
     /// <summary>Writes an annotation. Reuse the client event ID for an idempotent retry.</summary>
-    public async Task<JsonObject> AnnotateAsync(string userId, string threadId, string type, string? clientEventId = null,
+    public async Task<AnnotateResponse> AnnotateAsync(string userId, string threadId, string type, string? clientEventId = null,
         JsonObject? payload = null, string? occurredAt = null, CancellationToken cancellationToken = default)
     {
         Segment(userId); Segment(threadId); ArgumentException.ThrowIfNullOrWhiteSpace(type);
         var body = new JsonObject { ["type"] = type, ["userId"] = userId, ["threadId"] = threadId };
         if (payload is not null) body["payload"] = payload.DeepClone();
         if (occurredAt is not null) body["occurredAt"] = occurredAt;
-        return Object(await RequestAsync(HttpMethod.Put, "/connector/annotate/" + Segment(clientEventId ?? Guid.NewGuid().ToString()), body, cancellationToken));
+        return Resource<AnnotateResponse>(await RequestAsync(HttpMethod.Put, "/connector/annotate/" + Segment(clientEventId ?? Guid.NewGuid().ToString()), body, cancellationToken));
     }
 
     private static JsonObject MemoryBody(string content, string kind, string? scope, IReadOnlyList<string>? sourceThreadIds)
