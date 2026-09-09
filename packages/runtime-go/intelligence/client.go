@@ -171,10 +171,14 @@ func New(config Config) (*Client, error) {
 		}
 	}
 	config.APIURL = strings.TrimRight(config.APIURL, "/")
-	owned := config.HTTPClient == nil
+	owned := false
 	var client http.Client
-	if owned {
-		client = http.Client{Transport: http.DefaultTransport.(*http.Transport).Clone(), Timeout: 20 * time.Second}
+	if config.HTTPClient == nil {
+		client = http.Client{Transport: http.DefaultTransport, Timeout: 20 * time.Second}
+		if transport, ok := http.DefaultTransport.(*http.Transport); ok {
+			client.Transport = transport.Clone()
+			owned = true
+		}
 	} else {
 		client = *config.HTTPClient
 		if client.Timeout == 0 {

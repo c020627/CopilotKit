@@ -68,6 +68,9 @@ Platform failures return `*intelligence.Error` with a status but no private resp
 Cancellation remains available through `errors.Is(err, context.Canceled)`.
 Requests have a 20-second timeout by default and a 16 MiB response limit.
 The client does not follow redirects. `Close` releases only owned idle connections.
+By default, the SDK clones the standard `http.DefaultTransport` to keep its connections separate.
+If your application replaces `http.DefaultTransport` with a custom transport, the SDK borrows that transport.
+Your application controls when to close a custom transport or a transport supplied through `HTTPClient`.
 
 Pass this client as `runtime.Config{Intelligence: client, IdentifyUser: identifyUser, Agents: agents}` to mount Runtime routes.
 The Runtime borrows the client. Existing `APIKey` constructors remain valid.
