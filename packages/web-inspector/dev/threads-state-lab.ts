@@ -36,6 +36,7 @@ export const EDGE_SCENARIO_KEYS = [
   "pro-warning-4500-of-5000",
   "pro-at-limit-5000-of-5000",
   "oss-no-metadata-enabled-zero",
+  "oss-intelligence-disabled",
   "capability-absent",
   "unknown-limit",
   "missing-expiry",
@@ -244,6 +245,7 @@ function runtimeInfo(
     capability: ThreadsStateScenario["capability"];
     licenseStatus?: RuntimeInfo["licenseStatus"];
     metadata?: boolean;
+    mode?: RuntimeInfo["mode"];
     telemetryDisabled?: boolean;
   }>,
 ): RuntimeInfo {
@@ -257,10 +259,14 @@ function runtimeInfo(
       },
     },
     audioFileTranscriptionEnabled: false,
-    mode: "intelligence",
-    intelligence: {
-      wsUrl: `ws://127.0.0.1:5177/inspector-lab-runtime/${key}/realtime`,
-    },
+    mode: options.mode ?? "intelligence",
+    ...(options.mode === "sse"
+      ? {}
+      : {
+          intelligence: {
+            wsUrl: `ws://127.0.0.1:5177/inspector-lab-runtime/${key}/realtime`,
+          },
+        }),
     ...(options.capability === "absent"
       ? {}
       : {
@@ -653,6 +659,26 @@ function edgeScenario(
           capability: "enabled",
           metadata: false,
           licenseStatus: undefined,
+        }),
+        inspectorMetadata: undefined,
+        inspectorMetadataBody: undefined,
+        threads: [],
+      });
+    case "oss-intelligence-disabled":
+      return buildScenario({
+        ...base,
+        label: "OSS · Intelligence disabled",
+        description:
+          "Confirmed SSE runtime without Intelligence or saved Threads.",
+        deployment: "oss",
+        plan: "oss",
+        capability: "absent",
+        data: "zero",
+        runtimeInfo: runtimeInfo(key, {
+          capability: "absent",
+          metadata: false,
+          licenseStatus: "none",
+          mode: "sse",
         }),
         inspectorMetadata: undefined,
         inspectorMetadataBody: undefined,

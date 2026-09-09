@@ -160,27 +160,23 @@ function installCustomNotificationResponse(config: NotificationConfig): void {
           cohorts: [
             {
               id: "workbench",
-              name: "Workbench",
-              description: "Local stable SDK preview",
-              conditions: {},
+              name: "Stable SDKs without Intelligence",
+              description:
+                "SDK >=1.70.1 <1.71.0 with confirmed non-Intelligence runtime",
+              conditions: {
+                sdkVersion: ">=1.70.1 <1.71.0",
+                intelligence: "disabled",
+              },
             },
           ],
           notifications: [
             {
-              id: "workbench-update",
+              id: "workbench-version-update",
               title: config.text,
-              body: `## Workbench preview\n\n${escapeMarkdownText(config.text)}`,
+              body: `${escapeMarkdownText(config.text)}\n\nThis local sample targets SDK versions **1.70.1 up to, but not including, 1.71.0** with **Intelligence disabled**.`,
               publishedAt: customNotificationTimestamp(config.text),
               cohorts: ["workbench"],
               priority: "High",
-            },
-            {
-              id: "workbench-second",
-              title: "Another update",
-              body: "This remains in What's New after dismissing the preview.",
-              publishedAt: "2026-09-01T12:00:00.000Z",
-              cohorts: ["workbench"],
-              priority: "Normal",
             },
           ],
         }),

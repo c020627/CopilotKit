@@ -74,6 +74,7 @@ const EXPECTED_EDGE_KEYS = [
   "pro-warning-4500-of-5000",
   "pro-at-limit-5000-of-5000",
   "oss-no-metadata-enabled-zero",
+  "oss-intelligence-disabled",
   "capability-absent",
   "unknown-limit",
   "missing-expiry",
@@ -502,7 +503,7 @@ function nextSocketMessage(socket: WebSocket): Promise<unknown> {
   });
 }
 
-test("exports the exact ordered 49-scenario route catalog", () => {
+test("exports the exact ordered 50-scenario route catalog", () => {
   expect(CORE_SCENARIO_KEYS).toEqual(EXPECTED_CORE_KEYS);
   expect(LEARNING_SCENARIO_KEYS).toEqual(EXPECTED_LEARNING_KEYS);
   expect(EDGE_SCENARIO_KEYS).toEqual(EXPECTED_EDGE_KEYS);
@@ -511,7 +512,7 @@ test("exports the exact ordered 49-scenario route catalog", () => {
     ...EXPECTED_LEARNING_KEYS,
     ...EXPECTED_EDGE_KEYS,
   ]);
-  expect(new Set(ALL_SCENARIO_KEYS).size).toBe(49);
+  expect(new Set(ALL_SCENARIO_KEYS).size).toBe(50);
   expect(Object.keys(THREADS_STATE_SCENARIOS)).toEqual(ALL_SCENARIO_KEYS);
 });
 
@@ -746,6 +747,16 @@ test("uses safe actions, catalog limits, and newest thread fixtures", () => {
       expect(scenario.inspectorMetadata?.action).toBeUndefined();
     }
   }
+});
+
+test("distinguishes Intelligence usage from disabled Threads capability", () => {
+  const oss = getThreadsStateScenario("oss-intelligence-disabled");
+  expect(oss.runtimeInfo.mode).toBe("sse");
+  expect(oss.runtimeInfo.intelligence).toBeUndefined();
+  expect(oss.runtimeInfo.threadEndpoints).toBeUndefined();
+  expect(
+    getThreadsStateScenario("pro-disabled-existing").runtimeInfo.mode,
+  ).toBe("intelligence");
 });
 
 test("serves public info and optional inspector metadata shapes", async () => {
@@ -1337,7 +1348,7 @@ test("runs teardown before real select and reset control navigation", async () =
   }
 });
 
-test("drives the real Core, Inspector, stores, surfaces, and ledger for all 34 Thread routes", async () => {
+test("drives the real Core, Inspector, stores, surfaces, and ledger for all 35 Thread routes", async () => {
   const restoreNodeBridges = installNodeIntegrationBridges();
   const matchMediaDescriptor = Object.getOwnPropertyDescriptor(
     window,
