@@ -1,0 +1,130 @@
+---
+title: SDKs and Runtimes
+description: "Use Intelligence from TypeScript, Python, Go, Ruby, or C#. Call the SDK directly or connect your frontend through a Runtime."
+icon: "lucide/Code"
+doc_type: how-to
+frontend: universal
+---
+
+Choose the SDK for application code that reads or writes Intelligence data.
+Choose a Runtime to connect a CopilotKit frontend to your agents and Intelligence.
+The SDK works without mounted Runtime routes.
+
+## Choose your language
+
+### TypeScript
+
+The SDK exports `CopilotKitIntelligence` from `@copilotkit/runtime/v2`.
+The Runtime uses `CopilotRuntime`.
+
+[Connect a TypeScript Runtime](/intelligence/connect-your-runtime).
+
+### Python
+
+The SDK exports `Intelligence` from `copilotkit_intelligence`.
+The Runtime uses `copilotkit_runtime` for ASGI.
+
+[Python SDK and Runtime](https://github.com/CopilotKit/CopilotKit/blob/main/packages/runtime-python/README.md).
+
+### Go
+
+The SDK uses the `runtime-go/intelligence` package.
+The Runtime uses the `runtime-go` package.
+
+[Go SDK and Runtime](https://github.com/CopilotKit/CopilotKit/blob/main/packages/runtime-go/README.md).
+
+### Ruby
+
+Load the SDK with `require 'copilotkit/intelligence'`.
+The Runtime uses `CopilotKit::Runtime` for Rack and Rails.
+
+[Ruby SDK and Runtime](https://github.com/CopilotKit/CopilotKit/blob/main/packages/runtime-ruby/README.md).
+
+### C#
+
+The SDK uses the `CopilotKit.Intelligence` package.
+The Runtime uses the separate `CopilotKit.Intelligence.Runtime` package for ASP.NET Core.
+
+[C# SDK](https://github.com/CopilotKit/CopilotKit/blob/main/packages/runtime-dotnet/sdk/README.md)
+and [Runtime](https://github.com/CopilotKit/CopilotKit/blob/main/packages/runtime-dotnet/README.md).
+
+Each library uses its language's API conventions, error handling, and resource lifecycle.
+The package guides include installation steps and executable examples.
+
+## Use the SDK without a Runtime
+
+The SDK serves scripts, background jobs, and application services.
+Your code can read thread history, save and recall Memory, and record annotations without an HTTP host or agent.
+
+1. Choose the SDK entry point for your language.
+2. Configure its client with your server-side project API key.
+3. Call the resource method with the application-user ID required by that operation.
+
+Thread reads and Memory calls use the bare ID from your application.
+Inspection methods for persisted events and state use project-level authorization.
+The SDK does not create a dashboard user for a thread participant.
+
+The SDK and Runtime have separate roles even when they ship in one package.
+Python provides separate SDK and ASGI imports. C# provides separate NuGet packages.
+
+## Connect your frontend through a Runtime
+
+The Runtime connects your frontend, agent, and Intelligence platform.
+These Runtime integrations use the Intelligence Runner for persistent runs and replay.
+Your Next.js frontend can use any of the five backend languages.
+
+1. Configure the SDK client and your agent on the server.
+2. Pass the SDK client to the Runtime for your language.
+3. Resolve the application user from your trusted authentication system.
+4. Mount the Runtime routes and point your frontend at that endpoint.
+5. Send a message and verify its persisted thread in Intelligence.
+
+Application code and Runtime routes can share one SDK client.
+The native Runtimes borrow a supplied client. Your application controls its lifetime.
+The package guides describe each language's shutdown behavior.
+
+[A2UI](/generative-ui/a2ui) and [MCP Apps](/generative-ui/mcp-apps) pair Runtime tool configuration with frontend renderers.
+Your agent calls the configured tools, and the frontend shows their output.
+
+## Use Memory from application code
+
+The SDK provides Memory list, create, update, remove, and recall operations.
+Recall results retain relevance scores. Save results retain merge and replacement markers.
+Your application can apply a trusted Memory grant to limit user and project access.
+
+Memory stores facts and preferences across conversations.
+A Learning Container groups assigned threads for Learning.
+These resources have separate roles and separate configuration.
+
+See [Memories and Recall](/intelligence/memories) for the Memory workflow.
+
+## Assign threads to a Learning Container
+
+Select an existing Learning Container for the threads that your application sends to Learning.
+Pass its stable ID when you create a thread through the SDK:
+
+| Language   | Thread-creation parameter |
+| ---------- | ------------------------- |
+| TypeScript | `learningContainerId`     |
+| Python     | `learning_container_id`   |
+| Go         | `LearningContainerID`     |
+| Ruby       | `learning_container_id`   |
+| C#         | `learningContainerId`     |
+
+The Runtime can also resolve this ID from trusted server configuration before a run.
+Intelligence owns the binding and rejects attempts to move a bound thread.
+Keep the container choice in application policy rather than browser input.
+
+See [Learning](/learning) for container configuration.
+
+## Keep credentials and identity on the server
+
+A project API key grants access to its Intelligence project.
+Keep that key in server configuration, never in a browser bundle.
+An OpenAI API key belongs to your agent's model configuration. It does not replace the Intelligence key.
+
+Authenticate the caller before your server selects the application-user ID, Memory grant, or Learning Container.
+A browser-supplied ID or grant does not prove access.
+
+For platform setup, use the [Intelligence quickstart](/intelligence/quickstart).
+For private deployments, use the [self-hosting guide](/intelligence/self-hosting).
