@@ -4,10 +4,23 @@ from .client import Intelligence, IntelligenceError, MemoryGrant, RuntimeEntitle
 from .entitlements import RuntimeEntitlementResponse
 from .inspector import InspectorMetadata
 from .resources import (
+    AnnotateResponse,
     ListMemoriesResponse,
+    ListThreadsResponse,
     MemorySummary,
     RecallMemoriesResponse,
     SaveMemoryResponse,
+    ThreadEventsResponse,
+    ThreadInspectEvent,
+    ThreadMessage,
+    ThreadMessagesResponse,
+    ThreadNoSnapshot,
+    ThreadResolution,
+    ThreadSnapshot,
+    ThreadSnapshotDecodeError,
+    ThreadStateResponse,
+    ThreadSummary,
+    ThreadToolCall,
 )
 
 __all__ = [
@@ -21,4 +34,17 @@ __all__ = [
     "ListMemoriesResponse",
     "RecallMemoriesResponse",
     "SaveMemoryResponse",
+    "AnnotateResponse",
+    "ListThreadsResponse",
+    "ThreadSummary",
+    "ThreadResolution",
+    "ThreadToolCall",
+    "ThreadMessage",
+    "ThreadMessagesResponse",
+    "ThreadInspectEvent",
+    "ThreadEventsResponse",
+    "ThreadNoSnapshot",
+    "ThreadSnapshotDecodeError",
+    "ThreadSnapshot",
+    "ThreadStateResponse",
 ]

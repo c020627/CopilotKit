@@ -42,6 +42,11 @@ The SDK also provides `list_threads`, `get_thread`, `create_thread`, `update_thr
 `get_thread_messages`, `get_thread_events`, and `get_thread_state` read persisted thread data.
 `delete_thread` permanently deletes a thread and its history.
 
+Thread and history methods return dictionaries with public `TypedDict` annotations.
+`ThreadSummary` describes metadata. `ThreadMessagesResponse` and `ThreadEventsResponse` describe persisted history.
+`ThreadStateResponse` distinguishes a snapshot, no snapshot, and a snapshot decode error through the `kind` field.
+`AnnotateResponse` includes the annotation ID and duplicate marker. Structured message content and custom event fields retain their JSON values.
+
 Memory methods include `list_memories`, `create_memory`, `update_memory`, `remove_memory`, and `recall_memories`.
 Results use public `TypedDict` annotations: `MemorySummary`, `ListMemoriesResponse`, `RecallMemoriesResponse`, and `SaveMemoryResponse`.
 Your editor can show Memory fields, recall scores, and save markers. Results remain dictionaries with the original JSON field names and extension values.

@@ -25,7 +25,7 @@
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "uv run mypy src",
+        "command": "uv run mypy src tests/test_memory_result_types.py tests/test_thread_result_types.py",
         "cwd": "packages/runtime-python"
       },
       "cache": false,

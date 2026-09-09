@@ -17,7 +17,18 @@ import httpx
 
 from .entitlements import RuntimeEntitlementResponse, normalize_runtime_entitlements
 from .inspector import InspectorMetadata, parse_inspector_metadata
-from .resources import ListMemoriesResponse, RecallMemoriesResponse, SaveMemoryResponse
+from .resources import (
+    AnnotateResponse,
+    ListMemoriesResponse,
+    ListThreadsResponse,
+    RecallMemoriesResponse,
+    SaveMemoryResponse,
+    ThreadEventsResponse,
+    ThreadMessagesResponse,
+    ThreadResolution,
+    ThreadStateResponse,
+    ThreadSummary,
+)
 
 Json = dict[str, Any]
 Access = Literal["none", "read", "read-write"]
@@ -484,7 +495,7 @@ class Intelligence:
         include_archived: bool = False,
         limit: int | None = None,
         cursor: str | None = None,
-    ) -> Json:
+    ) -> ListThreadsResponse:
         """List a user's threads for one agent and retain the pagination cursor."""
         query: Json = {"userId": user_id, "agentId": agent_id}
         if include_archived:
@@ -493,19 +504,19 @@ class Intelligence:
             query["limit"] = limit
         if cursor is not None:
             query["cursor"] = cursor
-        return await self._object("GET", "/api/threads", query=query)
+        return cast(ListThreadsResponse, await self._object("GET", "/api/threads", query=query))
 
     async def _thread(
         self, method: str, path: str, body: Json | None = None, query: Json | None = None
-    ) -> Json:
+    ) -> ThreadSummary:
         """Unwrap the platform's thread envelope."""
         result = await self._object(method, path, body, query)
         thread = result.get("thread")
         if not isinstance(thread, dict) or not isinstance(thread.get("id"), str):
             raise IntelligenceError(502, "Invalid thread response")
-        return thread
+        return cast(ThreadSummary, thread)
 
-    async def get_thread(self, *, thread_id: str, user_id: str) -> Json:
+    async def get_thread(self, *, thread_id: str, user_id: str) -> ThreadSummary:
         """Read a thread with the caller's explicit user scope."""
         return await self._thread(
             "GET", "/api/threads/" + segment(thread_id), query={"userId": user_id}
@@ -519,7 +530,7 @@ class Intelligence:
         agent_id: str,
         name: str | None = None,
         learning_container_id: str | None = None,
-    ) -> Json:
+    ) -> ThreadSummary:
         """Create a thread and optionally assign its stable Learning Container ID."""
         body: Json = {"threadId": thread_id, "userId": user_id, "agentId": agent_id}
         if name is not None:
@@ -536,7 +547,7 @@ class Intelligence:
         agent_id: str,
         name: str | None = None,
         learning_container_id: str | None = None,
-    ) -> Json:
+    ) -> ThreadResolution:
         """Resolve concurrent creation with a scoped read after a 409 conflict."""
         try:
             return {
@@ -565,7 +576,7 @@ class Intelligence:
 
     async def update_thread(
         self, *, thread_id: str, user_id: str, agent_id: str, updates: Json
-    ) -> Json:
+    ) -> ThreadSummary:
         """Update thread metadata without letting updates replace caller identity."""
         return await self._thread(
             "PATCH",
@@ -591,19 +602,28 @@ class Intelligence:
             },
         )
 
-    async def get_thread_messages(self, *, thread_id: str, user_id: str) -> Json:
+    async def get_thread_messages(self, *, thread_id: str, user_id: str) -> ThreadMessagesResponse:
         """Read persisted messages in chronological order."""
-        return await self._object(
-            "GET", "/api/threads/" + segment(thread_id) + "/messages", query={"userId": user_id}
+        return cast(
+            ThreadMessagesResponse,
+            await self._object(
+                "GET", "/api/threads/" + segment(thread_id) + "/messages", query={"userId": user_id}
+            ),
         )
 
-    async def get_thread_events(self, *, thread_id: str) -> Json:
+    async def get_thread_events(self, *, thread_id: str) -> ThreadEventsResponse:
         """Read project-authorized persisted events through the inspection API."""
-        return await self._object("GET", "/api/_inspect/threads/" + segment(thread_id) + "/events")
+        return cast(
+            ThreadEventsResponse,
+            await self._object("GET", "/api/_inspect/threads/" + segment(thread_id) + "/events"),
+        )
 
-    async def get_thread_state(self, *, thread_id: str) -> Json:
+    async def get_thread_state(self, *, thread_id: str) -> ThreadStateResponse:
         """Read the platform's folded state and snapshot-presence marker."""
-        return await self._object("GET", "/api/_inspect/threads/" + segment(thread_id) + "/state")
+        return cast(
+            ThreadStateResponse,
+            await self._object("GET", "/api/_inspect/threads/" + segment(thread_id) + "/state"),
+        )
 
     async def annotate(
         self,
@@ -614,16 +634,19 @@ class Intelligence:
         client_event_id: str | None = None,
         payload: Json | None = None,
         occurred_at: str | None = None,
-    ) -> Json:
+    ) -> AnnotateResponse:
         """Write an annotation; reuse client_event_id for an idempotent retry."""
         body: Json = {"type": annotation_type, "userId": user_id, "threadId": thread_id}
         if payload is not None:
             body["payload"] = payload
         if occurred_at is not None:
             body["occurredAt"] = occurred_at
-        return await self._object(
-            "PUT",
-            "/connector/annotate/"
-            + segment(client_event_id if client_event_id is not None else str(uuid4())),
-            body,
+        return cast(
+            AnnotateResponse,
+            await self._object(
+                "PUT",
+                "/connector/annotate/"
+                + segment(client_event_id if client_event_id is not None else str(uuid4())),
+                body,
+            ),
         )
