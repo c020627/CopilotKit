@@ -122,7 +122,7 @@ test("reading the preview opens its Markdown and leaves both notices browseable"
       ?.textContent,
   ).toBe("fix");
   expect(loadNotificationState().readIds).toEqual(["high"]);
-  button(inspector, "← All updates").click();
+  button(inspector, "All updates").click();
   await inspector.updateComplete;
   expect(
     inspector.shadowRoot?.querySelectorAll(".cpk-notification-row"),

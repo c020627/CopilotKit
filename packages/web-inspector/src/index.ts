@@ -11313,8 +11313,6 @@ export class WebInspectorElement extends LitElement {
         background-color: #eee6fe !important;
         color: #5558b2 !important;
       }
-      .cpk-notification-row { display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 18px 0; text-align: left; border: 0; border-bottom: 1px solid #ddd; color: inherit; background: transparent; cursor: pointer; font: inherit; }
-      .cpk-notification-row span { font-size: 12px; opacity: .7; }
       span[class*="text-slate-800"],
       div[class*="text-slate-800"] {
         color: #010507 !important;
@@ -12713,32 +12711,112 @@ export class WebInspectorElement extends LitElement {
         .filter((n) => this.notificationState.eligibleIds.includes(n.id))
         .sort(compareNotifications) ?? [];
     const selected = notices.find((n) => n.id === this.selectedNotificationId);
-    return html`<div class="inspector-home inspector-whats-new" data-inspector-whats-new data-cpk-whats-new data-cpk-whats-new-state=${this.getWhatsNewState()}>
-      <header class="inspector-whats-new-header"><h1 class="inspector-home-title">What's New</h1></header>
-      <section class="inspector-home-news" aria-label="CopilotKit updates">
-        ${
-          selected
-            ? html`
-          <button type="button" @click=${() => {
-            this.selectedNotificationId = null;
-            this.requestUpdate();
-          }}>← All updates</button>
-          <article class="inspector-whats-new-document">
-            <h2>${selected.title}</h2><time datetime=${selected.publishedAt}>${new Date(selected.publishedAt).toLocaleDateString()}</time>
-            <div class="announcement-content" @click=${this.handleAnnouncementContentClick}>${unsafeHTML(this.notificationDocuments.get(selected.id) ?? "")}</div>
-          </article>`
-            : notices.length
-              ? notices.map(
-                  (notice) => html`
-          <button type="button" class="cpk-notification-row" @click=${() => this.readNotification(notice.id)}>
-            <strong>${notice.title}</strong>
-            <span>${new Date(notice.publishedAt).toLocaleDateString()}${this.notificationState.readIds.includes(notice.id) ? " · Read" : ""}</span>
-          </button>`,
-                )
-              : html`<p>${this.announcementLoaded || !this.notificationContext.development ? "You're all caught up." : "Loading updates…"}</p>`
-        }
-      </section>
-    </div>`;
+    const formatDate = (date: string) =>
+      new Date(date).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    return html`
+      <div
+        class="inspector-home inspector-whats-new"
+        data-inspector-whats-new
+        data-cpk-whats-new
+        data-cpk-whats-new-state=${this.getWhatsNewState()}
+      >
+        <section class="inspector-home-news" aria-label="CopilotKit updates">
+          ${
+            selected
+              ? html`
+                <button
+                  type="button"
+                  class="inspector-whats-new-back"
+                  @click=${() => {
+                    this.selectedNotificationId = null;
+                    this.requestUpdate();
+                  }}
+                >
+                  <span aria-hidden="true"
+                    >${this.renderIcon("ArrowLeft")}</span
+                  >
+                  All updates
+                </button>
+                <article class="inspector-whats-new-document">
+                  <header class="inspector-whats-new-document-header">
+                    <h1>${selected.title}</h1>
+                    <time datetime=${selected.publishedAt}>
+                      ${formatDate(selected.publishedAt)}
+                    </time>
+                  </header>
+                  <div
+                    class="announcement-content"
+                    @click=${this.handleAnnouncementContentClick}
+                  >
+                    ${unsafeHTML(
+                      this.notificationDocuments.get(selected.id) ?? "",
+                    )}
+                  </div>
+                </article>
+              `
+              : html`
+                <header class="inspector-whats-new-header">
+                  <h1 class="inspector-home-title">What's New</h1>
+                </header>
+                ${
+                  notices.length
+                    ? html`
+                      <ul class="inspector-whats-new-list">
+                        ${notices.map((notice) => {
+                          const read = this.notificationState.readIds.includes(
+                            notice.id,
+                          );
+                          return html`
+                            <li>
+                              <button
+                                type="button"
+                                class="cpk-notification-row"
+                                @click=${() => this.readNotification(notice.id)}
+                              >
+                                <span class="cpk-notification-copy">
+                                  <strong>${notice.title}</strong>
+                                  <span class="cpk-notification-meta">
+                                    <time datetime=${notice.publishedAt}
+                                      >${formatDate(notice.publishedAt)}</time
+                                    >
+                                    ${
+                                      read
+                                        ? nothing
+                                        : html`
+                                            <span class="cpk-notification-unread">Unread</span>
+                                          `
+                                    }
+                                  </span>
+                                </span>
+                                <span
+                                  class="cpk-notification-chevron"
+                                  aria-hidden="true"
+                                  >${this.renderIcon("ChevronRight")}</span
+                                >
+                              </button>
+                            </li>
+                          `;
+                        })}
+                      </ul>
+                    `
+                    : html`<p class="inspector-whats-new-empty" role="status">
+                      ${
+                        this.announcementLoaded ||
+                        !this.notificationContext.development
+                          ? "You're all caught up."
+                          : "Loading updates…"
+                      }
+                    </p>`
+                }
+              `
+          }
+        </section>
+      </div>
+    `;
   }
 
   private renderHomeIntelligenceHud(model: HomeModel) {
