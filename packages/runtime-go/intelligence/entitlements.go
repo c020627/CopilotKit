@@ -47,6 +47,17 @@ type RuntimeEntitlementError struct {
 // Error returns a message without response bodies or transport details.
 func (e *RuntimeEntitlementError) Error() string { return "Runtime entitlement request failed" }
 
+// As preserves common SDK error classification without exposing a transport cause.
+// Each match receives its own status copy, so callers cannot change cached errors.
+func (e *RuntimeEntitlementError) As(target any) bool {
+	common, ok := target.(**Error)
+	if !ok {
+		return false
+	}
+	*common = &Error{Status: e.Status}
+	return true
+}
+
 type entitlementState struct {
 	mu       sync.Mutex
 	expires  time.Time

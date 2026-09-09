@@ -64,7 +64,7 @@ Use `MemoryGrant{User: intelligence.ReadWrite, Project: intelligence.Read}` to a
 Without a grant, Intelligence applies its policy. Each Memory call requires the bare application user ID.
 
 `Annotate` records an annotation. Reuse `ClientEventID` when retrying the same annotation.
-Platform failures return `*intelligence.Error` with a status but no private response body.
+Platform failures match `*intelligence.Error` through `errors.As`, with a status but no private response body.
 Cancellation remains available through `errors.Is(err, context.Canceled)`.
 Requests have a 20-second timeout by default and a 16 MiB response limit.
 The client does not follow redirects. `Close` releases only owned idle connections.
@@ -83,6 +83,8 @@ Concurrent callers share one request with a 1.5-second deadline. Each caller can
 Active grants remain in the cache for 30 seconds. Other results and lookup failures remain for five seconds.
 Each caller receives a copy. The SDK does not reuse an expired grant after a failed refresh.
 `RuntimeEntitlementError` exposes `Status` and `Retryable` without private response bodies or transport details.
+`errors.As` matches both `*intelligence.RuntimeEntitlementError` and the common `*intelligence.Error` type.
+Each common error match receives a separate status copy. It does not expose a transport cause.
 Runtime `/info` uses this SDK cache and includes the compatibility field `licenseStatus`.
 `Close` cancels pending entitlement requests and clears the cache.
 
