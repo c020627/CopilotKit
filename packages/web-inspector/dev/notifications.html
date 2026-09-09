@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Notifications · Inspector workbench</title>
+    <link rel="stylesheet" href="/notifications.css" />
+    <script type="module" src="/notifications.ts"></script>
+  </head>
+  <body>
+    <header class="workbench-header">
+      <strong>Inspector workbench</strong>
+      <nav aria-label="Workbench">
+        <a href="/">Scenarios</a
+        ><a href="/notifications.html" aria-current="page">Notifications</a>
+      </nav>
+      <span>Local preview</span>
+    </header>
+    <main>
+      <section class="editor" aria-labelledby="editor-heading">
+        <header>
+          <h1 id="editor-heading">Draft a notification</h1>
+          <p>Choose an audience. See what they receive.</p>
+        </header>
+        <label
+          >Start with an example<select id="preset">
+            <option value="">Custom draft</option>
+          </select></label
+        >
+        <form id="draft-form">
+          <fieldset>
+            <legend>Notification</legend>
+            <label>Title<input name="title" maxlength="256" required /></label>
+            <label
+              >Body <span class="hint">Markdown</span
+              ><textarea
+                name="body"
+                rows="6"
+                maxlength="100000"
+                required
+              ></textarea>
+            </label>
+            <label
+              >Priority<select name="priority">
+                <option>Low</option>
+                <option selected>Normal</option>
+                <option>High</option>
+                <option>Urgent</option>
+              </select></label
+            >
+          </fieldset>
+          <fieldset>
+            <legend>Audience</legend>
+            <label
+              >Cohort name<input name="cohortName" maxlength="256" required
+            /></label>
+            <label
+              >SDK version range<input
+                name="sdkVersion"
+                placeholder="Any stable version"
+                spellcheck="false"
+            /></label>
+            <div class="pair">
+              <label
+                >Framework<select name="framework">
+                  <option value="">Any</option>
+                  <option value="react">React</option>
+                  <option value="vue">Vue</option>
+                  <option value="angular">Angular</option>
+                </select></label
+              >
+              <label
+                >Intelligence<select name="intelligence">
+                  <option value="">Any</option>
+                  <option value="enabled">Enabled</option>
+                  <option value="disabled">Disabled</option>
+                </select></label
+              >
+            </div>
+            <label
+              >Plan<input name="plan" placeholder="Any plan" list="plans"
+            /></label>
+            <details>
+              <summary>More conditions</summary>
+              <div class="detail-fields">
+                <label
+                  >Runtime version range<input
+                    name="runtimeVersion"
+                    placeholder="Any version"
+                    spellcheck="false"
+                /></label>
+                <label
+                  >Deployment<select name="deployment">
+                    <option value="">Any</option>
+                    <option value="managed">Managed</option>
+                    <option value="self-hosted">Self-hosted</option>
+                  </select></label
+                >
+                <label
+                  >License<select name="license">
+                    <option value="">Any</option>
+                    <option>valid</option>
+                    <option>none</option>
+                    <option>expired</option>
+                    <option>expiring</option>
+                    <option>invalid</option>
+                  </select></label
+                >
+                <label
+                  >Priority override<input
+                    name="priorityOverride"
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="Use named priority"
+                /></label>
+              </div>
+            </details>
+            <p class="hint">
+              All conditions must match. Prereleases are excluded.
+            </p>
+          </fieldset>
+          <div id="draft-error" role="alert" hidden></div>
+          <button type="submit" class="primary">Preview notification</button>
+        </form>
+        <section class="handoff" aria-label="Create notification PR">
+          <h2>Ready for a PR?</h2>
+          <p>Copy this draft into your agent in Intelligence.</p>
+          <button id="copy-prompt" type="button">Copy authoring prompt</button>
+          <details>
+            <summary>View prompt</summary>
+            <textarea
+              id="prompt"
+              rows="10"
+              readonly
+              aria-label="Authoring prompt"
+            ></textarea>
+          </details>
+          <p id="save-status" class="hint" role="status"></p>
+        </section>
+      </section>
+      <section class="preview" aria-labelledby="preview-heading">
+        <header class="preview-heading">
+          <div>
+            <h2 id="preview-heading">Test a client</h2>
+            <p>Simulated metadata, real Inspector.</p>
+          </div>
+          <button id="replay" type="button">Replay</button>
+        </header>
+        <form id="client-form" class="client-form">
+          <label
+            >SDK version<input
+              name="clientSdkVersion"
+              spellcheck="false"
+              required
+          /></label>
+          <label
+            >Framework<select name="clientFramework">
+              <option value="react">React</option>
+              <option value="vue">Vue</option>
+              <option value="angular">Angular</option>
+            </select></label
+          >
+          <label
+            >Intelligence<select name="clientIntelligence">
+              <option value="">Unknown</option>
+              <option value="enabled">Enabled</option>
+              <option value="disabled">Disabled</option>
+            </select></label
+          >
+          <label
+            >Plan<input name="clientPlan" placeholder="Unknown" list="plans"
+          /></label>
+          <details class="client-more">
+            <summary>More client metadata</summary>
+            <div class="detail-fields pair">
+              <label
+                >Runtime version<input
+                  name="clientRuntimeVersion"
+                  placeholder="Unknown"
+                  spellcheck="false"
+              /></label>
+              <label
+                >Deployment<select name="clientDeployment">
+                  <option value="">Unknown</option>
+                  <option value="managed">Managed</option>
+                  <option value="self-hosted">Self-hosted</option>
+                </select></label
+              >
+              <label
+                >License<select name="clientLicense">
+                  <option value="">Unknown</option>
+                  <option>valid</option>
+                  <option>none</option>
+                  <option>expired</option>
+                  <option>expiring</option>
+                  <option>invalid</option>
+                </select></label
+              >
+            </div>
+          </details>
+        </form>
+        <div id="match-result" role="status"></div>
+        <div class="preview-toolbar">
+          <span id="preview-status">Preview</span
+          ><label class="view-picker"
+            >View<select id="preview-view">
+              <option value="bubble">Notification bubble</option>
+              <option value="updates">What's New</option>
+            </select></label
+          >
+        </div>
+        <div class="frame-scroll">
+          <iframe
+            id="preview-frame"
+            title="Live notification in the Inspector"
+            src="about:blank"
+          ></iframe>
+        </div>
+      </section>
+    </main>
+    <datalist id="plans">
+      <option value="free"></option>
+      <option value="pro"></option>
+      <option value="team"></option>
+      <option value="enterprise"></option>
+    </datalist>
+  </body>
+</html>
